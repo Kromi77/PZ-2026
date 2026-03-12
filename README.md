@@ -79,3 +79,5 @@ Odpowiada za bezstratne manipulacje na bitach (steganografia) oraz operacje mate
 * **Zarządzanie zależnościami:** 
 * Niezawodność dekodera w automatycznym rozpoznawaniu parametrów.
 * Czytelność i ergonomia interfejsu użytkownika.
+
+![DancingShrek](https://media.tenor.com/cFPFHbvs2yQAAAAM/shrek-shrek-dance.gif)
