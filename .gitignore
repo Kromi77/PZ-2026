@@ -50,6 +50,22 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+# Node.js / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+
+# Build
+build/
+dist/
+.next/
+out/
+
 # Logs
 *.log
 logs/
