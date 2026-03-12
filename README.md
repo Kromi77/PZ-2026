@@ -20,7 +20,7 @@ Aplikacja musi umożliwiać zaszyfrowanie tekstu wejściowego przed jego ukrycie
 |:---|:---|:---|:---:|:---:|
 | **1** | **Szyfr Cezara** | Przesunięcie znaków o stałą wartość klucza. | | |
 | **2** | **Szyfr Vigenère’a** | Szyfr polialfabetyczny wykorzystujący słowo-klucz. | | |
-| **3** | **Szyfr XOR** | Operacja logiczna bitowego XOR na znakach tekstu z wykorzystaniem klucza. | | |
+| **3** | **Szyfr XOR** | Operacja logiczna bitowego XOR na znakach tekstu z wykorzystaniem klucza. |Michał Bej|Krzysztof Guzik|
 | **4** | **Szyfr Atbash** | Prosty szyfr podstawieniowy polegający na odwróceniu alfabetu (A↔Z, B↔Y). | | |
 | **5** | **ROT13** | Specyficzny wariant szyfru Cezara z przesunięciem o 13 pozycji. | | |
 | **6** | **Szyfr płotkowy (Rail Fence)**| Szyfr transpozycyjny polegający na zygzakowatym zapisie tekstu. | | |
