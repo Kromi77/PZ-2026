@@ -56,5 +56,26 @@ Aplikacja musi umożliwiać zaszyfrowanie tekstu wejściowego przed jego ukrycie
 ## 4. Kryteria oceny
 * Poprawność matematyczna zaimplementowanych szyfrów.
 * Jakość wizualna/akustyczna nośnika po ukryciu danych (wpływ suwaków na artefakty).
+* 
+## 5. Wykorzystane technologie
+
+Mając na uwadze dobre praktyki inżynierii oprogramowania, architektura projektu opiera się na separacji logiki biznesowej (Core) od interfejsu użytkownika (GUI). 
+
+### Warstwa Prezentacji (GUI)
+Odpowiada za interakcję z użytkownikiem, parametryzację steganografii (suwaki) oraz wizualizację nośników przed i po modyfikacji.
+* **Język i Framework:** 
+* **Wizualizacja danych (oscylogramy/obrazy):** 
+
+### Logika Biznesowa (Core)
+Odpowiada za bezstratne manipulacje na bitach (steganografia) oraz operacje matematyczne (kryptografia).
+* **Język programowania:** Python 3.10 
+* **Przetwarzanie multimediów:**
+    * **Pliki BMP:** 
+    * **Pliki WAV:** 
+* **Kryptografia:** Autorska implementacja algorytmów szyfrujących (zgodnie z wymogami projektu, brak zewnętrznych bibliotek typu OpenSSL dla głównych zadań).
+
+### Narzędzia Deweloperskie i Organizacja Pracy
+* **System kontroli wersji:** Git (repozytorium na platformie GitHub)
+* **Zarządzanie zależnościami:** 
 * Niezawodność dekodera w automatycznym rozpoznawaniu parametrów.
 * Czytelność i ergonomia interfejsu użytkownika.
