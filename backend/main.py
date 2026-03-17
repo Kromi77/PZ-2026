@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from app.routers import crypto_router as crypto
 
 app = FastAPI()
 
@@ -11,10 +12,12 @@ def read_root():
 def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "q": q}
 
+app.include_router(crypto.router)
 
+#should be at the end of file
 if __name__ == "__main__":
     host = "127.0.0.1"
-    port = 8000
+    port = 3000
 
     print("\n" + "=" * 50)
     print("🚀 FASTAPI SERVER STARTING")
