@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from app.routers import xorCipher_router as xor
+from app.routers import cezarCipher_router as cezar
 
 app = FastAPI()
 
@@ -13,6 +14,7 @@ def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "q": q}
 
 app.include_router(xor.router)
+app.include_router(cezar.router)
 
 #should be at the end of file
 if __name__ == "__main__":
