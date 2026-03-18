@@ -81,7 +81,7 @@ Odpowiada za interakcję z użytkownikiem, parametryzację steganografii (suwaki
 
 Odpowiada za bezstratne manipulacje na bitach (steganografia) oraz operacje matematyczne (kryptografia).
 
-- **Język programowania:** Python 3.10
+- **Język programowania:** Python 3
 - **Przetwarzanie multimediów:**
   - **Pliki BMP:**
   - **Pliki WAV:**
