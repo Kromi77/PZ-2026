@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from app.routers import crypto_router as crypto
+from app.routers import xorCipher_router as xor
 
 app = FastAPI()
 
@@ -12,7 +12,7 @@ def read_root():
 def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "q": q}
 
-app.include_router(crypto.router)
+app.include_router(xor.router)
 
 #should be at the end of file
 if __name__ == "__main__":
