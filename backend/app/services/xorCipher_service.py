@@ -1,4 +1,12 @@
 import codecs
+from fastapi import File, UploadFile
+from app.schemas import xorCipher_schema as xorSchema
+
+def xor_file_request(file: UploadFile = File(...)) -> xorSchema.XORFileRequest:
+    """
+    Zależność zapewniająca kontener (schemat) dla przesyłanych plików.
+    """
+    return xorSchema.XORFileRequest(file=file)
 
 def xor_cipher(text, key):
     """

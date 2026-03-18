@@ -1,5 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
 from app.services import xorCipher_service as xorService
 from app.schemas import xorCipher_schema as xorSchema
 
@@ -15,12 +14,13 @@ async def encrypt_xor(params: xorSchema.XOREncryptRequest):
     return xorSchema.XOREncryptResponse(output=result)
 
 @router.post("/encrypt/xor/file", response_model=xorSchema.XOREncryptResponse)
-async def encrypt_xor_file(file: UploadFile = File(...)):
+async def encrypt_xor_file(params: xorSchema.XORFileRequest = Depends(xorService.xor_file_request)):
     """
     Szyfruje tekst i klucz pobrane z pliku .txt.
     Plik powinien zawierać dwie linie: pierwsza to tekst, druga to klucz.
     Zwraca wynik jako tekst.
     """
+    file = params.file
     if file.content_type != "text/plain":
         raise HTTPException(status_code=400, detail="Plik musi być typu .txt")
     content = await file.read()
@@ -45,12 +45,13 @@ async def decrypt_xor(params: xorSchema.XORDecryptRequest):
     return xorSchema.XORDecryptResponse(output=result)
 
 @router.post("/decrypt/xor/file", response_model=xorSchema.XORDecryptResponse)
-async def decrypt_xor_file(file: UploadFile = File(...)):
+async def decrypt_xor_file(params: xorSchema.XORFileRequest = Depends(xorService.xor_file_request)):
     """
     Deszyfruje tekst i klucz pobrane z pliku .txt.
     Plik powinien zawierać dwie linie: pierwsza to tekst zaszyfrowany, druga to klucz.
     Zwraca wynik jako tekst.
     """
+    file = params.file
     if file.content_type != "text/plain":
         raise HTTPException(status_code=400, detail="Plik musi być typu .txt")
     content = await file.read()

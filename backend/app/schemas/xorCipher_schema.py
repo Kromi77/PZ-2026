@@ -1,3 +1,4 @@
+from fastapi import UploadFile
 from pydantic import BaseModel, Field
 
 class XOREncryptRequest(BaseModel):
@@ -14,6 +15,15 @@ class XOREncryptRequest(BaseModel):
         title="Klucz szyfrujący",
         description="Klucz użyty do operacji XOR. Nie może być pusty.",
         examples=["klucz"]
+    )
+
+class XORFileRequest(BaseModel):
+    """Schema dla danych wejściowych przesyłanych jako plik (.txt)."""
+
+    file: UploadFile = Field(
+        ..., 
+        title="Plik wejściowy",
+        description="Plik .txt zawierający dwie linie: pierwsza to tekst, druga to klucz."
     )
 
 class XORDecryptRequest(BaseModel):
