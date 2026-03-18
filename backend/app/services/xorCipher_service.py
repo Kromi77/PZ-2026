@@ -1,9 +1,11 @@
+import codecs
+
 def xor_cipher(text, key):
     """
     Szyfruje lub deszyfruje tekst przy użyciu algorytmu XOR.
 
     Logika opiera się na operacji bitowej XOR:
-    $P \oplus K = C$ oraz $C \oplus K = P$
+    P ⊕ K = C oraz C ⊕ K = P
     gdzie P to tekst jawny, K to klucz, a C to szyfrogram.
     """
     if not key:
@@ -25,3 +27,14 @@ def xor_cipher(text, key):
 
     # 3. Złożenie listy znaków w jeden ciąg tekstowy
     return "".join(encrypted_chars)
+
+def _unescape_unicode_escapes(value: str) -> str:
+    """
+    Zamienia znaki unicode zapisane jako literały (np. "\\u0015") na rzeczywiste znaki kontrolne.
+    """
+    if "\\u" not in value and "\\x" not in value:
+        return value
+    try:
+        return codecs.decode(value, "unicode_escape")
+    except Exception:
+        return value
