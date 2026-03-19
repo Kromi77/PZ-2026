@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from app.routers import xorCipher_router as xor
 from app.routers import cezarCipher_router as cezar
+from app.routers import atbashCipher_router as atbash
 
 app = FastAPI()
 
@@ -15,6 +16,7 @@ def read_item(item_id: int, q: str = None):
 
 app.include_router(xor.router)
 app.include_router(cezar.router)
+app.include_router(atbash.router)
 
 #should be at the end of file
 if __name__ == "__main__":
@@ -22,11 +24,11 @@ if __name__ == "__main__":
     port = 3000
 
     print("\n" + "=" * 50)
-    print("🚀 FASTAPI SERVER STARTING")
+    print("FASTAPI SERVER STARTING")
     print("=" * 50)
-    print(f"🔗 Base URL:    http://{host}:{port}")
-    print(f"📖 Swagger UI:  http://{host}:{port}/docs")
-    print(f"📚 ReDoc:       http://{host}:{port}/redoc")
+    print(f"Base URL:    http://{host}:{port}")
+    print(f"Swagger UI:  http://{host}:{port}/docs")
+    print(f"ReDoc:       http://{host}:{port}/redoc")
     print("=" * 50 + "\n")
 
     uvicorn.run("main:app", host=host, port=port, reload=True)
