@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.routers import xorCipher_router as xor
 from app.routers import cezarCipher_router as cezar
 from app.routers import atbashCipher_router as atbash
+from app.routers import rot13_router as rot13
 
 app = FastAPI()
 
@@ -17,6 +18,7 @@ def read_item(item_id: int, q: str = None):
 app.include_router(xor.router)
 app.include_router(cezar.router)
 app.include_router(atbash.router)
+app.include_router(rot13.router)
 
 #should be at the end of file
 if __name__ == "__main__":
