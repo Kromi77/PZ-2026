@@ -14,8 +14,6 @@ Projekt zespołowy
 
 <img width="1838" height="229" alt="Podzial_na_grupy" src="Podzial_na_grupy.png" />
 
----
-
 ## 1. Cel projektu
 
 Celem projektu jest stworzenie aplikacji umożliwiającej ukrywanie informacji tekstowych w plikach BMP i WAV. System musi zapewniać dwustopniowe zabezpieczenie danych: najpierw poprzez proces szyfrowania tekstu jednym z wybranych algorytmów, a następnie poprzez proces steganograficznego ukrycia zaszyfrowanej wiadomości w nośniku multimedialnym.
