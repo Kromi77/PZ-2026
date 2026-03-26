@@ -10,6 +10,10 @@ Projekt zespołowy
 
 ---
 
+## Podział na grupy
+
+<img width="1838" height="229" alt="Podzial_na_grupy" src="Podzial_na_grupy.png" />
+
 ## 1. Cel projektu
 
 Celem projektu jest stworzenie aplikacji umożliwiającej ukrywanie informacji tekstowych w plikach BMP i WAV. System musi zapewniać dwustopniowe zabezpieczenie danych: najpierw poprzez proces szyfrowania tekstu jednym z wybranych algorytmów, a następnie poprzez proces steganograficznego ukrycia zaszyfrowanej wiadomości w nośniku multimedialnym.
@@ -27,7 +31,7 @@ Aplikacja musi umożliwiać zaszyfrowanie tekstu wejściowego przed jego ukrycie
 | **1** | **Szyfr Cezara**                | Przesunięcie znaków o stałą wartość klucza.                                       |    Bogumił Wójcik    |    Kamil Urbański     |   ✅   |
 | **2** | **Szyfr Vigenère’a**            | Szyfr polialfabetyczny wykorzystujący słowo-klucz.                                |    Rafał Leszczyk    |                       |        |
 | **3** | **Szyfr XOR**                   | Operacja logiczna bitowego XOR na znakach tekstu z wykorzystaniem klucza.         |      Michał Bej      |    Krzysztof Guzik    |   ✅   |
-| **4** | **Szyfr Atbash**                | Prosty szyfr podstawieniowy polegający na odwróceniu alfabetu (A↔Z, B↔Y).         | Karolina Oleśniewicz | Włodzimierz Palazanov |  ✅      |
+| **4** | **Szyfr Atbash**                | Prosty szyfr podstawieniowy polegający na odwróceniu alfabetu (A↔Z, B↔Y).         | Karolina Oleśniewicz | Włodzimierz Palazanov |   ✅   |
 | **5** | **ROT13**                       | Specyficzny wariant szyfru Cezara z przesunięciem o 13 pozycji.                   |    Michał Wojtala    |   Kacper Mielańczyk   |        |
 | **6** | **Szyfr płotkowy (Rail Fence)** | Szyfr transpozycyjny polegający na zygzakowatym zapisie tekstu.                   |    Adam Zadrożny     |                       |        |
 | **7** | **Szyfr kolumnowy**             | Transpozycja tekstu na podstawie klucza ustalającego kolejność kolumn w macierzy. |  Oktawian Majerczak  |      Michał Krok      |        |
