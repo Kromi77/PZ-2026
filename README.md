@@ -29,7 +29,7 @@ Aplikacja musi umożliwiać zaszyfrowanie tekstu wejściowego przed jego ukrycie
 | Nr    | Metoda szyfrowania              | Opis zadania                                                                      |       Osoba 1        |        Osoba 2        | Status |
 | :---- | :------------------------------ | :-------------------------------------------------------------------------------- | :------------------: | :-------------------: | :----: |
 | **1** | **Szyfr Cezara**                | Przesunięcie znaków o stałą wartość klucza.                                       |    Bogumił Wójcik    |    Kamil Urbański     |   ✅   |
-| **2** | **Szyfr Vigenère’a**            | Szyfr polialfabetyczny wykorzystujący słowo-klucz.                                |    Rafał Leszczyk    |                       |        |
+| **2** | **Szyfr Vigenère’a**            | Szyfr polialfabetyczny wykorzystujący słowo-klucz.                                |    Rafał Leszczyk    |                       |   ✅   |
 | **3** | **Szyfr XOR**                   | Operacja logiczna bitowego XOR na znakach tekstu z wykorzystaniem klucza.         |      Michał Bej      |    Krzysztof Guzik    |   ✅   |
 | **4** | **Szyfr Atbash**                | Prosty szyfr podstawieniowy polegający na odwróceniu alfabetu (A↔Z, B↔Y).         | Karolina Oleśniewicz | Włodzimierz Palazanov |   ✅   |
 | **5** | **ROT13**                       | Specyficzny wariant szyfru Cezara z przesunięciem o 13 pozycji.                   |    Michał Wojtala    |   Kacper Mielańczyk   |   ✅   |
