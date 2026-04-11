@@ -5,6 +5,7 @@ from app.routers import cezarCipher_router as cezar
 from app.routers import atbashCipher_router as atbash
 from app.routers import rot13_router as rot13
 from app.routers import railFenceCipher_router as railfence
+from app.routers import vigenereCipher_router as vinegre
 
 app = FastAPI()
 
@@ -21,6 +22,7 @@ app.include_router(cezar.router)
 app.include_router(atbash.router)
 app.include_router(rot13.router)
 app.include_router(railfence.router)
+app.include_router(vinegre.router)
 
 #should be at the end of file
 if __name__ == "__main__":
