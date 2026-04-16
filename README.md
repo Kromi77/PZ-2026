@@ -34,15 +34,15 @@ Aplikacja musi umożliwiać zaszyfrowanie tekstu wejściowego przed jego ukrycie
 | **4** | **Szyfr Atbash**                | Prosty szyfr podstawieniowy polegający na odwróceniu alfabetu (A↔Z, B↔Y).         | Karolina Oleśniewicz | Włodzimierz Palazanov |   ✅   |
 | **5** | **ROT13**                       | Specyficzny wariant szyfru Cezara z przesunięciem o 13 pozycji.                   |    Michał Wojtala    |   Kacper Mielańczyk   |   ✅   |
 | **6** | **Szyfr płotkowy (Rail Fence)** | Szyfr transpozycyjny polegający na zygzakowatym zapisie tekstu.                   |    Adam Zadrożny     |                       |   ✅   |
-| **7** | **Szyfr kolumnowy**             | Transpozycja tekstu na podstawie klucza ustalającego kolejność kolumn w macierzy. |  Oktawian Majerczak  |      Michał Krok      |        |
+| **7** | **Szyfr kolumnowy**             | Transpozycja tekstu na podstawie klucza ustalającego kolejność kolumn w macierzy. |  Oktawian Majerczak  |      Michał Krok      |   ✅   |
 
 ### 2.2 Moduł Kodera (Steganografia)
 
 - **Parametryzacja obrazu (BMP):** Suwaki dla kanałów R, G, B określające liczbę bitów (0–8) użytych do zapisu w każdym pikselu.
 - **Parametryzacja dźwięku (WAV):** Suwak określający liczbę bitów LSB w każdej próbce dźwięku.
 - **Rozmieszczenie danych:**
-  - _Ciągłe:_ Zapis od początku pliku.
-  - _Równomierne:_ Rozłożenie bitów informacji w całej objętości pliku (dynamiczny krok).
+    - _Ciągłe:_ Zapis od początku pliku.
+    - _Równomierne:_ Rozłożenie bitów informacji w całej objętości pliku (dynamiczny krok).
 - **Wizualizacja:** Porównanie graficzne (obraz) i dźwiękowe (oscylogram/waveform) nośnika przed i po procesie kodowania.
 
 ### 2.3 Moduł Dekodera
@@ -87,8 +87,8 @@ Odpowiada za bezstratne manipulacje na bitach (steganografia) oraz operacje mate
 
 - **Język programowania:** Python 3
 - **Przetwarzanie multimediów:**
-  - **Pliki BMP:**
-  - **Pliki WAV:**
+    - **Pliki BMP:**
+    - **Pliki WAV:**
 - **Kryptografia:** Autorska implementacja algorytmów szyfrujących (zgodnie z wymogami projektu, brak zewnętrznych bibliotek typu OpenSSL dla głównych zadań).
 
 ### Narzędzia Deweloperskie i Organizacja Pracy
