@@ -33,7 +33,7 @@ Aplikacja musi umożliwiać zaszyfrowanie tekstu wejściowego przed jego ukrycie
 | **3** | **Szyfr XOR**                   | Operacja logiczna bitowego XOR na znakach tekstu z wykorzystaniem klucza.         |      Michał Bej      |    Krzysztof Guzik    |   ✅   |
 | **4** | **Szyfr Atbash**                | Prosty szyfr podstawieniowy polegający na odwróceniu alfabetu (A↔Z, B↔Y).         | Karolina Oleśniewicz | Włodzimierz Palazanov |   ✅   |
 | **5** | **ROT13**                       | Specyficzny wariant szyfru Cezara z przesunięciem o 13 pozycji.                   |    Michał Wojtala    |   Kacper Mielańczyk   |   ✅   |
-| **6** | **Szyfr płotkowy (Rail Fence)** | Szyfr transpozycyjny polegający na zygzakowatym zapisie tekstu.                   |    Adam Zadrożny     |                       |        |
+| **6** | **Szyfr płotkowy (Rail Fence)** | Szyfr transpozycyjny polegający na zygzakowatym zapisie tekstu.                   |    Adam Zadrożny     |                       |   ✅   |
 | **7** | **Szyfr kolumnowy**             | Transpozycja tekstu na podstawie klucza ustalającego kolejność kolumn w macierzy. |  Oktawian Majerczak  |      Michał Krok      |        |
 
 ### 2.2 Moduł Kodera (Steganografia)
