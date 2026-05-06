@@ -18,13 +18,13 @@ def parse_bmp_header(
     sliderR: int = Form(0),
     sliderG: int = Form(4),
     sliderB: int = Form(8),
-    bites: int = Form(123456789),
+    bits: int = Form(123456789),
     deployment_mode: int = Form(0),
 ) -> BMPHeader:
     return BMPHeader(
         cipher=cipher,
-        slider=[sliderR, sliderG, sliderB],
-        bites=bites,
+        sliders=[sliderR, sliderG, sliderB],
+        bits=bits,
         deployment_mode=deployment_mode,
     )
 
@@ -32,13 +32,13 @@ def parse_bmp_header(
 def parse_wav_header(
     cipher: str = Form("Szyfr Cezara"),
     slider: int = Form(8),
-    bites: int = Form(123456789),
+    bits: int = Form(123456789),
     deployment_mode: int = Form(0),
 ) -> WAVHeader:
     return WAVHeader(
         cipher=cipher,
         slider=slider,
-        bites=bites,
+        bits=bits,
         deployment_mode=deployment_mode,
     )
 
@@ -46,7 +46,7 @@ def parse_wav_header(
 @router.post("/header/inject-bmp/")
 async def inject_bmp_route(header: BMPHeader = Depends(parse_bmp_header), file: UploadFile = File(...)):
     # przygotowanie dodatkowych danych z BMPHeader
-    additional_header_data = BMPService.bmp_header_to_bites(header)
+    additional_header_data = BMPService.bmp_header_to_bits(header)
 
     try:
         # wywołanie funkcji modyfikującej w pamięci
@@ -96,7 +96,7 @@ async def extract_bmp_header_route(file: UploadFile = File(...)):
 @router.post("/header/inject-wav/")
 async def inject_wav_route(header: WAVHeader = Depends(parse_wav_header), file: UploadFile = File(...)):
     # Przygotowanie danych (8 bajtów)
-    additional_header_data = WAVService.wav_header_to_bites(header)
+    additional_header_data = WAVService.wav_header_to_bits(header)
 
     try:
         # Przekazujemy file.file bezpośrednio, tak jak w Twoim BMP

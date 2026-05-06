@@ -5,13 +5,13 @@ import struct
 from app.schemas.header_schema import WAVHeader, Cipher, DeploymentMode
 
 
-def wav_header_to_bites_without_hash(header: WAVHeader) -> bytes:
+def wav_header_to_bits_without_hash(header: WAVHeader) -> bytes:
     """Konwertuje WAVHeader na ciąg bitów reprezentowany jako bytes, bez pola hash.
     
     Format bitów (43 bitów razem, spakowanych w 6 bajtów):
     - bity 0-2: cipher (3 bity)
     - bity 3-6: slider (4 bity)
-    - bity 7-41: bites (35 bitów)
+    - bity 7-41: bits (35 bitów)
     - bit 42: deployment_mode (1 bit)
     """
     # Zakoduj cipher (3 bity, potrzebne do zakodowania 7 enum wartości)
@@ -20,8 +20,8 @@ def wav_header_to_bites_without_hash(header: WAVHeader) -> bytes:
     # Zakoduj slider (4 bity, zakres 0-8)
     slider = header.slider
     
-    # Zakoduj bites (35 bitów)
-    bites = header.bites
+    # Zakoduj bits (35 bitów)
+    bits = header.bits
     
     # Zakoduj deployment_mode (1 bit, wartość 0 lub 1)
     deployment_mode = int(header.deployment_mode)
@@ -30,30 +30,30 @@ def wav_header_to_bites_without_hash(header: WAVHeader) -> bytes:
     result = 0
     result |= cipher_index              # 3 bity na pozycji 0-2
     result |= (slider << 3)             # 4 bity na pozycji 3-6
-    result |= (bites << 7)              # 35 bitów na pozycji 7-41
+    result |= (bits << 7)              # 35 bitów na pozycji 7-41
     result |= (deployment_mode << 42)   # 1 bit na pozycji 42
     
     # Konwertuj na bytes (6 bajtów, little-endian)
     return result.to_bytes(6, byteorder='little')
 
 
-def wav_header_to_bites(header: WAVHeader) -> bytes:
+def wav_header_to_bits(header: WAVHeader) -> bytes:
     """Konwertuje WAVHeader na ciąg bitów reprezentowany jako bytes.
 
     Format bitów (56 bity razem, spakowanych w 7 bajtów):
     - bity 0-2: cipher (3 bity)
     - bity 3-6: slider (4 bity)
-    - bity 7-41: bites (35 bitów)
+    - bity 7-41: bits (35 bitów)
     - bit 42: deployment_mode (1 bit)
     - bity 43-56: hash (13 bitów)
     """
-    core_bytes = wav_header_to_bites_without_hash(header)
+    core_bytes = wav_header_to_bits_without_hash(header)
     hash_bits = generate_wav_header_hash(header)
     core_value = int.from_bytes(core_bytes, byteorder='little')
     full_value = core_value | (hash_bits << 43)
     return full_value.to_bytes(7, byteorder='little')
 
-def bites_to_wav_header(data: bytes) -> WAVHeader:
+def bits_to_wav_header(data: bytes) -> WAVHeader:
     """Konwertuje 51-bitowy ciąg bitów na WAVHeader.
 
     Oczekuje little-endianowego ciągu bajtów o długości co najmniej 7.
@@ -66,7 +66,7 @@ def bites_to_wav_header(data: bytes) -> WAVHeader:
     value = int.from_bytes(data[:7], byteorder='little')
     cipher_index = value & 0b111
     slider = (value >> 3) & 0b1111
-    bites = (value >> 7) & ((1 << 35) - 1)
+    bits = (value >> 7) & ((1 << 35) - 1)
     deployment_mode_value = (value >> 42) & 0b1
 
     try:
@@ -77,7 +77,7 @@ def bites_to_wav_header(data: bytes) -> WAVHeader:
     return WAVHeader(
         cipher=cipher,
         slider=slider,
-        bites=bites,
+        bits=bits,
         deployment_mode=DeploymentMode(deployment_mode_value),
     )
 
@@ -88,7 +88,7 @@ def generate_wav_header_hash(header: WAVHeader) -> int:
     Konwertuje header na bity (bez hash), oblicza MD5, i zwraca pierwsze 13 bitów jako integer.
     """
     # Konwertuj header na bity
-    header_bytes = wav_header_to_bites_without_hash(header)
+    header_bytes = wav_header_to_bits_without_hash(header)
     
     # Oblicz MD5 hash
     md5_hash = hashlib.md5(header_bytes).digest()
@@ -248,7 +248,7 @@ def extract_wav_header_from_file(input_file: io.BytesIO) -> WAVHeader:
 
     # wyciągnięcie pierwszych 43 bitów (6 bajtów) i konwersja na WAVHeader
     try:
-        header = bites_to_wav_header(header_bytes)
+        header = bits_to_wav_header(header_bytes)
     except (ValueError, TypeError) as e:
         raise ValueError(f"File does not contain encrypted information - invalid header data: {str(e)}")
 

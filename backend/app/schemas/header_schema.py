@@ -29,19 +29,19 @@ class BMPHeader(BaseModel):
         description="Wybrany algorytm szyfrowania.",
         examples=[Cipher.CEZAR]
     )
-    slider: List[Annotated[int, Field(ge=0, le=8)]] = Field(
+    sliders: List[Annotated[int, Field(ge=0, le=8)]] = Field(
         ..., 
         min_length=3,
         max_length=3,
-        title="Slider",
+        title="Sliders",
         description="Tablica trzech wartości suwaków RGB w zakresie 0–8.",
         examples=[[0, 4, 8]]
     )
-    """Bites to liczba bitów, które będą używane do ukrywania danych w nagłówku BMP.
+    """Bits to liczba bitów, które będą używane do ukrywania danych w nagłówku BMP.
     Zakres 0–35 bitów wynika z faktu, że nagłówek BMP ma pole na długość danych w bajtach długości 4 bajty. My      przedstawiamy długość danych w bitach, więc maksymalna wartość 0xFFFFFF * 8 = 34359738360.""" 
-    bites: Annotated[int, Field(ge=0, le=34359738360)] = Field(
+    bits: Annotated[int, Field(ge=0, le=34359738360)] = Field(
         ..., 
-        title="Bites",
+        title="Bits",
         description="Długość zaszyfrowanych danych w bitach (maksymalnie 35 bitów).",
         examples=[123456789]
     )
@@ -67,11 +67,11 @@ class WAVHeader(BaseModel):
         description="Wartość suwaka w zakresie 0–8.",
         examples=[8]
     )
-    """Bites to liczba bitów, które będą używane do ukrywania danych w nagłówku WAV.
+    """Bits to liczba bitów, które będą używane do ukrywania danych w nagłówku WAV.
     Zakres 0–35 bitów wynika z faktu, że nagłówek WAV ma pole na długość danych w bajtach długości 4 bajty. My      przedstawiamy długość danych w bitach, więc maksymalna wartość 0xFFFFFF * 8 = 34359738360.""" 
-    bites: Annotated[int, Field(ge=0, le=34359738360)] = Field(
+    bits: Annotated[int, Field(ge=0, le=34359738360)] = Field(
         ..., 
-        title="Bites",
+        title="Bits",
         description="Długość zaszyfrowanych danych w bitach (maksymalnie 35 bitów).",
         examples=[123456789]
     )

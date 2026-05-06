@@ -5,28 +5,28 @@ import struct
 from app.schemas.header_schema import BMPHeader, Cipher, DeploymentMode
 
 
-def bmp_header_to_bites_without_hash(header: BMPHeader) -> bytes:
+def bmp_header_to_bits_without_hash(header: BMPHeader) -> bytes:
     """Konwertuje BMPHeader na ciąg bitów reprezentowany jako bytes, bez pola hash.
 
     Format bitów (51 bitów razem, spakowanych w 7 bajtów):
     - bity 0-2: cipher (3 bity)
     - bity 3-14: slider[0], slider[1], slider[2] (4 bity każdy = 12 bitów razem)
-    - bity 15-49: bites (35 bitów)
+    - bity 15-49: bits (35 bitów)
     - bit 50: deployment_mode (1 bit)
     """
     # Zakoduj cipher (3 bity, potrzebne do zakodowania 7 enum wartości)
     cipher_index = list(Cipher).index(header.cipher)
     
     # Zakoduj trzy wartości slider (4 bity każda)
-    slider_values = header.slider
+    slider_values = header.sliders
     if len(slider_values) != 3:
         raise ValueError("slider must contain exactly 3 values")
     for val in slider_values:
         if not (0 <= val <= 8):
             raise ValueError(f"slider value {val} out of range 0-8")
     
-    # Zakoduj bites (35 bitów)
-    bites = header.bites
+    # Zakoduj bits (35 bitów)
+    bits = header.bits
     
     # Zakoduj deployment_mode (1 bit, wartość 0 lub 1)
     deployment_mode = int(header.deployment_mode)
@@ -37,35 +37,35 @@ def bmp_header_to_bites_without_hash(header: BMPHeader) -> bytes:
     result |= (slider_values[0] << 3)           # 4 bity na pozycji 3-6
     result |= (slider_values[1] << 7)           # 4 bity na pozycji 7-10
     result |= (slider_values[2] << 11)          # 4 bity na pozycji 11-14
-    result |= (bites << 15)                     # 35 bitów na pozycji 15-49
+    result |= (bits << 15)                     # 35 bitów na pozycji 15-49
     result |= (deployment_mode << 50)           # 1 bit na pozycji 50
     
     # Konwertuj na bytes (7 bajtów, little-endian)
     return result.to_bytes(7, byteorder='little')
 
 
-def bmp_header_to_bites(header: BMPHeader) -> bytes:
+def bmp_header_to_bits(header: BMPHeader) -> bytes:
     """Konwertuje BMPHeader na ciąg bitów reprezentowany jako bytes.
 
     Format bitów (64 bity razem, spakowanych w 8 bajtów):
     - bity 0-2: cipher (3 bity)
     - bity 3-14: slider[0], slider[1], slider[2] (4 bity każdy = 12 bitów razem)
-    - bity 15-49: bites (35 bitów)
+    - bity 15-49: bits (35 bitów)
     - bit 50: deployment_mode (1 bit)
     - bity 51-63: hash (13 bitów)
     """
-    core_bytes = bmp_header_to_bites_without_hash(header)
+    core_bytes = bmp_header_to_bits_without_hash(header)
     hash_bits = generate_bmp_header_hash(header)
     core_value = int.from_bytes(core_bytes, byteorder='little')
     full_value = core_value | (hash_bits << 51)
     return full_value.to_bytes(8, byteorder='little')
 
 
-def bites_to_bmp_header(data: bytes) -> BMPHeader:
+def bits_to_bmp_header(data: bytes) -> BMPHeader:
     """Konwertuje ciąg bitów na BMPHeader, ignorując pole hash.
 
     Oczekuje little-endianowego ciągu bajtów o długości co najmniej 7.
-    Jeśli podany jest pełny wynik z bmp_header_to_bites(), dodatkowe bity hash zostaną zignorowane.
+    Jeśli podany jest pełny wynik z bmp_header_to_bits(), dodatkowe bity hash zostaną zignorowane.
     """
     if not isinstance(data, (bytes, bytearray)):
         raise TypeError("data must be bytes or bytearray")
@@ -77,7 +77,7 @@ def bites_to_bmp_header(data: bytes) -> BMPHeader:
     slider_0 = (value >> 3) & 0b1111
     slider_1 = (value >> 7) & 0b1111
     slider_2 = (value >> 11) & 0b1111
-    bites = (value >> 15) & ((1 << 35) - 1)
+    bits = (value >> 15) & ((1 << 35) - 1)
     deployment_mode_value = (value >> 50) & 0b1
 
     try:
@@ -87,8 +87,8 @@ def bites_to_bmp_header(data: bytes) -> BMPHeader:
 
     return BMPHeader(
         cipher=cipher,
-        slider=[slider_0, slider_1, slider_2],
-        bites=bites,
+        sliders=[slider_0, slider_1, slider_2],
+        bits=bits,
         deployment_mode=DeploymentMode(deployment_mode_value),
     )
 
@@ -99,7 +99,7 @@ def generate_bmp_header_hash(header: BMPHeader) -> int:
     Konwertuje header na bity (bez hash), oblicza MD5, i zwraca pierwsze 13 bitów jako integer.
     """
     # Konwertuj header na bity
-    header_bytes = bmp_header_to_bites_without_hash(header)
+    header_bytes = bmp_header_to_bits_without_hash(header)
     
     # Oblicz MD5 hash
     md5_hash = hashlib.md5(header_bytes).digest()
@@ -256,7 +256,7 @@ def extract_bmp_header_from_file(input_file: io.BytesIO) -> BMPHeader:
 
     # wyciągnięcie pierwszych 51 bitów (7 bajtów) i konwersja na BMPHeader
     try:
-        header = bites_to_bmp_header(header_bytes)
+        header = bits_to_bmp_header(header_bytes)
     except (ValueError, TypeError) as e:
         raise ValueError(f"File does not contain encrypted information - invalid header data: {str(e)}")
 
