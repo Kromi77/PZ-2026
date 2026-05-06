@@ -7,6 +7,7 @@ from app.routers import rot13_router as rot13
 from app.routers import railFenceCipher_router as railfence
 from app.routers import vigenereCipher_router as vinegre
 from app.routers import columnarCipher_router as columnar
+from app.routers import header_router as header
 
 app = FastAPI()
 
@@ -25,6 +26,7 @@ app.include_router(rot13.router)
 app.include_router(railfence.router)
 app.include_router(vinegre.router)
 app.include_router(columnar.router)
+app.include_router(header.router)
 
 #should be at the end of file
 if __name__ == "__main__":
