@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum
-from typing import Annotated
+from typing import Annotated, List
 
 from pydantic import BaseModel, Field, conint
 
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, conint
 class Cipher(str, Enum):
     """Dostępne algorytmy szyfrowania BMP."""
     CEZAR = "Szyfr Cezara"
-    VIGENERE = "Szyfr Vigenère’a"
+    VIGENERE = "Szyfr Vigenere'a"
     XOR = "Szyfr XOR"
     ATBASH = "Szyfr Atbash"
     ROT13 = "ROT13"
@@ -29,11 +29,13 @@ class BMPHeader(BaseModel):
         description="Wybrany algorytm szyfrowania.",
         examples=[Cipher.CEZAR]
     )
-    slider: Annotated[int, Field(ge=0, le=8)] = Field(
+    slider: List[Annotated[int, Field(ge=0, le=8)]] = Field(
         ..., 
+        min_length=3,
+        max_length=3,
         title="Slider",
-        description="Wartości suwaków RGB w zakresie 0–8.",
-        examples=[0, 4, 8]
+        description="Tablica trzech wartości suwaków RGB w zakresie 0–8.",
+        examples=[[0, 4, 8]]
     )
     """Bites to liczba bitów, które będą używane do ukrywania danych w nagłówku BMP.
     Zakres 0–35 bitów wynika z faktu, że nagłówek BMP ma pole na długość danych w bajtach długości 4 bajty. My      przedstawiamy długość danych w bitach, więc maksymalna wartość 0xFFFFFF * 8 = 34359738360.""" 

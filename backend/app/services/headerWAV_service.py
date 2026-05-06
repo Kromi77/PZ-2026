@@ -203,3 +203,64 @@ def remove_data_from_wav_header(input_file: io.BytesIO) -> io.BytesIO:
 
     output_file.seek(0)
     return output_file
+
+def extract_wav_header_from_file(input_file: io.BytesIO) -> WAVHeader:
+    """Odczytuje WAVHeader z pliku WAV (7 bajtów tuż przed danymi audio).
+
+    Funkcja:
+    1. Odczytuje 7 bajtów znajdujących się przed danymi audio
+    2. Wyciąga pierwsze 43 bitów i konwertuje na WAVHeader
+    3. Wyciąga ostatnie 13 bitów (hash)
+    4. Weryfikuje hash za pomocą check_wav_header_hash
+    5. Zwraca WAVHeader lub błąd jeśli hash się nie zgadza
+    
+    Args:
+        input_file: BytesIO zawierającego zawartość pliku WAV
+        
+    Returns:
+        WAVHeader jeśli hash jest prawidłowy
+        
+    Raises:
+        ValueError: jeśli plik nie jest prawidłowym WAV lub hash się nie zgadza
+    """
+    # odczyt danych z pliku
+    input_file.seek(0)
+    file_content = input_file.read()
+
+    # weryfikacja nagłówka WAV
+    if file_content[:4] not in [b'RIFF', b'RIFX'] or file_content[8:12] != b'WAVE':
+        raise ValueError("Provided file is not a valid WAV format.")
+
+    # szukanie sekcji 'data'
+    data_chunk_pos = file_content.find(b'data')
+    if data_chunk_pos == -1:
+        raise ValueError("File does not contain encrypted information - could not find 'data' chunk.")
+
+    # sprawdzenie, czy plik zawiera wystarczającą ilość danych
+    if data_chunk_pos < 7 or len(file_content) < data_chunk_pos:
+        raise ValueError("File does not contain encrypted information - not enough data before audio offset.")
+
+    # odczytanie 7 bajtów tuż przed chunkiem 'data'
+    header_bytes = file_content[data_chunk_pos - 7:data_chunk_pos]
+    
+    if len(header_bytes) != 7:
+        raise ValueError("File does not contain encrypted information - unable to read 7 bytes.")
+
+    # wyciągnięcie pierwszych 43 bitów (6 bajtów) i konwersja na WAVHeader
+    try:
+        header = bites_to_wav_header(header_bytes)
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"File does not contain encrypted information - invalid header data: {str(e)}")
+
+    # wyciągnięcie ostatnich 13 bitów (bity 43-55 z całych 7 bajtów)
+    full_value = int.from_bytes(header_bytes, byteorder='little')
+    hash_13_bits = (full_value >> 43) & 0x1FFF
+
+    # konwersja 13 bitów na 2 bajty (little-endian) do porównania
+    hash_bytes = hash_13_bits.to_bytes(2, byteorder='little')
+
+    # weryfikacja hash
+    if not check_wav_header_hash(header, hash_bytes):
+        raise ValueError("File does not contain encrypted information - hash verification failed.")
+
+    return header

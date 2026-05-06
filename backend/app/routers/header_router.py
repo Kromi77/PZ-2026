@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 import io
 from app.services import headerBMP_service as BMPService
 from app.services import headerWAV_service as WAVService
+from app.schemas.header_schema import BMPHeader, WAVHeader
+
 
 router = APIRouter()
 
@@ -10,10 +12,41 @@ router = APIRouter()
 !!!WSZYSTKIE ENDPOINTY STWORZONE TYMCZASOWO DO PÓŹNIEJSZEGO USUNIĘCIA!!!
 """
 
+
+def parse_bmp_header(
+    cipher: str = Form("Szyfr Cezara"),
+    sliderR: int = Form(0),
+    sliderG: int = Form(4),
+    sliderB: int = Form(8),
+    bites: int = Form(123456789),
+    deployment_mode: int = Form(0),
+) -> BMPHeader:
+    return BMPHeader(
+        cipher=cipher,
+        slider=[sliderR, sliderG, sliderB],
+        bites=bites,
+        deployment_mode=deployment_mode,
+    )
+
+
+def parse_wav_header(
+    cipher: str = Form("Szyfr Cezara"),
+    slider: int = Form(8),
+    bites: int = Form(123456789),
+    deployment_mode: int = Form(0),
+) -> WAVHeader:
+    return WAVHeader(
+        cipher=cipher,
+        slider=slider,
+        bites=bites,
+        deployment_mode=deployment_mode,
+    )
+
+
 @router.post("/header/inject-bmp/")
-async def inject_bmp_route(file: UploadFile = File(...)):
-    # przygotowanie przykładowej tablicy bajtów (dodatkowe dane)
-    additional_header_data = bytes([0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78])
+async def inject_bmp_route(header: BMPHeader = Depends(parse_bmp_header), file: UploadFile = File(...)):
+    # przygotowanie dodatkowych danych z BMPHeader
+    additional_header_data = BMPService.bmp_header_to_bites(header)
 
     try:
         # wywołanie funkcji modyfikującej w pamięci
@@ -48,17 +81,22 @@ async def extract_bmp_route(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import StreamingResponse
-# Importujesz tylko serwis - router nie musi wiedzieć o 'io'
-from app.services import headerWAV_service as WAVService
+@router.post("/header/extract-bmp-header/")
+async def extract_bmp_header_route(file: UploadFile = File(...)):
+    try:
+        # odczyt BMPHeader z pliku
+        bmp_header = BMPService.extract_bmp_header_from_file(file.file)
+        
+        # zwrot BMPHeader jako JSON
+        return bmp_header
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-router = APIRouter()
 
 @router.post("/header/inject-wav/")
-async def inject_wav_route(file: UploadFile = File(...)):
+async def inject_wav_route(header: WAVHeader = Depends(parse_wav_header), file: UploadFile = File(...)):
     # Przygotowanie danych (8 bajtów)
-    additional_header_data = bytes([0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11])
+    additional_header_data = WAVService.wav_header_to_bites(header)
 
     try:
         # Przekazujemy file.file bezpośrednio, tak jak w Twoim BMP
@@ -85,6 +123,17 @@ async def extract_wav_route(file: UploadFile = File(...)):
             media_type="audio/wav",
             headers={"Content-Disposition": f"attachment; filename=restored_{file.filename}"}
         )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.post("/header/extract-wav-header/")
+async def extract_wav_header_route(file: UploadFile = File(...)):
+    try:
+        # odczyt WAVHeader z pliku
+        wav_header = WAVService.extract_wav_header_from_file(file.file)
+        
+        # zwrot WAVHeader jako JSON
+        return wav_header
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
