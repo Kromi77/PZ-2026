@@ -14,14 +14,13 @@ def parse_bmp_header(
     sliderG: int = Form(..., ge=0, le=8),
     sliderB: int = Form(..., ge=0, le=8),
     bits: int = Form(..., ge=0, le=34359738367),
-    deployment_mode_str: Literal["Ciagłe", "Równomierne"] = Form(..., alias="deployment_mode"),
+    deployment_mode: int = Form(..., ge=0, le=1),
 ) -> BMPHeader:
-    mode_val = DeploymentMode(0) if deployment_mode_str == "Ciagłe" else DeploymentMode(1)
     return BMPHeader(
         cipher=cipher,
         sliders=[sliderR, sliderG, sliderB],
         bits=bits,
-        deployment_mode=mode_val,
+        deployment_mode=DeploymentMode(deployment_mode),
     )
 
 
@@ -29,14 +28,13 @@ def parse_wav_header(
     cipher: Cipher = Form(...),
     slider: int = Form(..., ge=0, le=8),
     bits: int = Form(..., ge=0, le=34359738367),
-    deployment_mode_str: Literal["Ciagłe", "Równomierne"] = Form(..., alias="deployment_mode"),
+    deployment_mode: int = Form(..., ge=0, le=1),
 ) -> WAVHeader:
-    mode_val = DeploymentMode(0) if deployment_mode_str == "Ciagłe" else DeploymentMode(1)
     return WAVHeader(
         cipher=cipher,
         slider=slider,
         bits=bits,
-        deployment_mode=mode_val,
+        deployment_mode=DeploymentMode(deployment_mode),
     )
 
 
