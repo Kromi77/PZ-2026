@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.services import columnarCipher_service as service
 from app.schemas import columnarCipher_schema as schema
 
-router = APIRouter()
+router = APIRouter(tags=["Cipher"])
 
 @router.post("/columnar/encrypt", response_model=schema.ColumnarResponse)
 async def encrypt_columnar(params: schema.ColumnarEncryptRequest):

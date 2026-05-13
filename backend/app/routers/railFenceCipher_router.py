@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.services import railFenceCipher_service as service
 from app.schemas import railFenceCipher_schema as schema
 
-router = APIRouter()
+router = APIRouter(tags=["Cipher"])
 
 
 @router.post("/railfence/encrypt", response_model=schema.RailFenceResponse)

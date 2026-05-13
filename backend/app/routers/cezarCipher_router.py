@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.services import cezarCipher_service as service
 from app.schemas import cezarCipher_schema as schema
 
-router = APIRouter()
+router = APIRouter(tags=["Cipher"])
 
 @router.post("/caesar/encrypt", response_model=schema.CaesarResponse)
 async def encrypt_caesar(params: schema.CaesarEncryptRequest):
