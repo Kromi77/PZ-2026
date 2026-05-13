@@ -22,6 +22,8 @@ def wav_header_to_bits_without_hash(header: WAVHeader) -> bytes:
     
     # Zakoduj bits (35 bitów)
     bits = header.bits
+    if not (0 <= bits <= 34359738367):
+        raise ValueError("bits value out of range 0-34359738367")
     
     # Zakoduj deployment_mode (1 bit, wartość 0 lub 1)
     deployment_mode = int(header.deployment_mode)
