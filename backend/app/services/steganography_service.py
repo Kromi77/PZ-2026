@@ -69,62 +69,88 @@ class LSBSteganography:
             return text_bytes.decode('latin-1', errors='replace')
     
     @staticmethod
-    def hide_in_bmp(bmp_data: bytes, secret_message: str) -> bytes:
+    def calculate_message_bits(message: str) -> int:
+        """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości (prefiks 32-bit + dane)."""
+        return len(LSBSteganography.text_to_binary(message))
+
+    @staticmethod
+    def hide_in_bmp(bmp_data: bytes, secret_message: str, uniform: bool = False) -> bytes:
         """
         Ukrywa zaszyfrowaną wiadomość w pliku BMP.
-        
-        Metoda: Modyfikuje najmniej znaczący bit (LSB) każdego bajtu piksela.
-        Każdy bajt BMP może ukryć 1 bit wiadomości.
-        
+
+        Tryb ciągły (uniform=False): bity zapisywane kolejno od bajtu 0.
+        Tryb równomierny (uniform=True): bity rozłożone równomiernie w całym
+        obszarze pikseli wg wzoru: pozycja[i] = floor(i * krok),
+        gdzie krok = pojemność_nośnika / liczba_bitów_wiadomości.
+
         Args:
             bmp_data: Zawartość pliku BMP
             secret_message: Zaszyfrowana wiadomość do ukrycia
-            
+            uniform: Czy użyć równomiernego rozmieszczenia
+
         Returns:
             Zmodyfikowana zawartość BMP z ukrytą wiadomością
         """
         # BMP header ma 54 bajty, dane pikseli zaczynają się od bajtu 54
         header = bmp_data[:54]
         pixel_data = bytearray(bmp_data[54:])
-        
-        # Konwertuj wiadomość na bity
+
         secret_bits = LSBSteganography.text_to_binary(secret_message)
-        
-        # Sprawdź czy jest wystarczająco miejsca
-        if len(secret_bits) > len(pixel_data):
+        n_bits = len(secret_bits)
+        n_carrier = len(pixel_data)
+
+        if n_bits > n_carrier:
             raise ValueError(
-                f"Wiadomość zbyt długa. Maksimum bitów: {len(pixel_data)}, "
-                f"potrzeba: {len(secret_bits)}"
+                f"Wiadomość zbyt długa. Maksimum bitów: {n_carrier}, "
+                f"potrzeba: {n_bits}"
             )
-        
-        # Ukryj bity w LSB pikseli
-        for i, bit in enumerate(secret_bits):
-            # Usuń LSB i wstaw tajny bit
-            pixel_data[i] = (pixel_data[i] & 0xFE) | int(bit)
-        
+
+        if uniform:
+            # Model równomiernego rozpraszania: krok = pojemność / liczba_bitów
+            step = n_carrier / n_bits
+            for i, bit in enumerate(secret_bits):
+                pos = int(i * step)
+                pixel_data[pos] = (pixel_data[pos] & 0xFE) | int(bit)
+        else:
+            for i, bit in enumerate(secret_bits):
+                pixel_data[i] = (pixel_data[i] & 0xFE) | int(bit)
+
         return header + bytes(pixel_data)
-    
+
     @staticmethod
-    def extract_from_bmp(bmp_data: bytes, message_length: int = None) -> str:
+    def extract_from_bmp(
+        bmp_data: bytes,
+        message_length: int = None,
+        uniform: bool = False,
+        total_bits: int = None,
+    ) -> str:
         """
         Ekstraktuje ukrytą wiadomość z pliku BMP.
-        
+
+        W trybie równomiernym (uniform=True) wymagany jest parametr total_bits
+        (liczba bitów wiadomości zapisana wcześniej w nagłówku BMPHeader.bits),
+        aby odtworzyć ten sam krok rozpraszania co przy ukrywaniu.
+
         Args:
             bmp_data: Zawartość pliku BMP
-            message_length: Długość wiadomości (jeśli znana)
-            
+            message_length: Nieużywane, zachowane dla kompatybilności
+            uniform: Czy wiadomość była ukryta trybem równomiernym
+            total_bits: Całkowita liczba ukrytych bitów (z nagłówka BMPHeader.bits)
+
         Returns:
             Wyekstraktowana zaszyfrowana wiadomość
         """
-        # BMP header ma 54 bajty
         pixel_data = bmp_data[54:]
-        
-        # Ekstrakcja bitów
-        secret_bits = ''
-        for byte_val in pixel_data:
-            secret_bits += str(byte_val & 1)  # Weź LSB
-        
-        # Konwertuj bity na tekst (binary_to_text sam obsługuje separator)
+
+        if uniform and total_bits:
+            # Odczyt z tych samych pozycji co przy ukrywaniu
+            step = len(pixel_data) / total_bits
+            secret_bits = ''.join(
+                str(pixel_data[int(i * step)] & 1) for i in range(total_bits)
+            )
+        else:
+            secret_bits = ''.join(str(b & 1) for b in pixel_data)
+
         return LSBSteganography.binary_to_text(secret_bits)
     
     @staticmethod
@@ -213,14 +239,25 @@ class LSBSteganography:
 
 
 # Funkcje do użytku w routerze
-def hide_message_in_bmp(bmp_file_content: bytes, encrypted_message: str) -> bytes:
-    """Wrapper - ukrywa wiadomość w BMP."""
-    return LSBSteganography.hide_in_bmp(bmp_file_content, encrypted_message)
+def hide_message_in_bmp(
+    bmp_file_content: bytes, encrypted_message: str, uniform: bool = False
+) -> bytes:
+    """Wrapper - ukrywa wiadomość w BMP (tryb ciągły lub równomierny)."""
+    return LSBSteganography.hide_in_bmp(bmp_file_content, encrypted_message, uniform)
 
 
-def extract_message_from_bmp(bmp_file_content: bytes) -> str:
-    """Wrapper - ekstraktuje wiadomość z BMP."""
-    return LSBSteganography.extract_from_bmp(bmp_file_content)
+def extract_message_from_bmp(
+    bmp_file_content: bytes, uniform: bool = False, total_bits: int = None
+) -> str:
+    """Wrapper - ekstraktuje wiadomość z BMP (tryb ciągły lub równomierny)."""
+    return LSBSteganography.extract_from_bmp(
+        bmp_file_content, uniform=uniform, total_bits=total_bits
+    )
+
+
+def calculate_message_bits(message: str) -> int:
+    """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości — do zapisu w nagłówku BMPHeader.bits."""
+    return LSBSteganography.calculate_message_bits(message)
 
 
 def hide_message_in_wav(wav_file_content: bytes, encrypted_message: str) -> bytes:
