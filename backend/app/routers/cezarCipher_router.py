@@ -8,7 +8,7 @@ router = APIRouter(tags=["Cipher"])
 async def encrypt_caesar(params: schema.CaesarEncryptRequest):
     """
     Szyfruje tekst szyfrem Cezara. 
-    Kluczem jest liczba całkowita (przesunięcie).
+    Kluczem jest liczba całkowita - przesunięcie.
     """
     # Szyfrowanie = przesunięcie w prawo (dodatnie)
     result = service.caesar_cipher(params.text, params.shift)
