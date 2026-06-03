@@ -64,3 +64,65 @@ def _decrypt_text(encrypted_text: str, cipher_type: Cipher, key: Any) -> str:
         return columnarCipher_service.columnar_decrypt(encrypted_text, key)
         
     return f"[Błąd - nieznany szyfr {cipher_type.value}] {encrypted_text}"
+
+def process_file(file_content: bytes, media_type: str) -> dict:
+    """
+    Główna funkcja Modułu Dekodera realizująca:
+    1. Analizę pliku
+    2. Identyfikację parametrów
+    3. Ekstrakcję i deszyfrowanie
+    """
+    file_stream = io.BytesIO(file_content)
+    
+    # ---------------------------------------------------------
+    # Pkt 1 & 2: Analiza pliku i Identyfikacja parametrów
+    # ---------------------------------------------------------
+    try:
+        if media_type.lower() == "bmp":
+            header = headerBMP_service.extract_bmp_header_from_file(file_stream)
+            sliders = header.sliders
+        elif media_type.lower() == "wav":
+            header = headerWAV_service.extract_wav_header_from_file(file_stream)
+            sliders = [header.slider]
+        else:
+            raise ValueError("Nieobsługiwany format. Dozwolone: bmp, wav.")
+    except ValueError as e:
+        raise ValueError(f"Analiza pliku wykazała brak ukrytej wiadomości lub uszkodzenie: {str(e)}")
+
+    cipher_type = header.cipher
+    deployment_mode = header.deployment_mode
+    total_bits = header.bits
+
+    # ---------------------------------------------------------
+    # Pkt 3: Ekstrakcja wiadomości (Steganografia)
+    # ---------------------------------------------------------
+    is_uniform = (deployment_mode == DeploymentMode.UNIFORM)
+    
+    if media_type.lower() == "bmp":
+        encrypted_message = steganography_service.extract_message_from_bmp(
+            bmp_file_content=file_content,
+            uniform=is_uniform,
+            total_bits=total_bits
+        )
+    else:
+        encrypted_message = steganography_service.extract_message_from_wav(
+            wav_file_content=file_content,
+            uniform=is_uniform,
+            total_bits=total_bits
+        )
+
+    if not encrypted_message:
+        raise ValueError("Nie udało się odczytać ciągu bitów z danych steganograficznych.")
+
+    # ---------------------------------------------------------
+    # Pkt 3 cd.: Deszyfrowanie (Kryptografia)
+    # ---------------------------------------------------------
+    crypto_key = _derive_key_from_sliders(cipher_type, sliders)
+    decrypted_text = _decrypt_text(encrypted_message, cipher_type, crypto_key)
+
+    return {
+        "cipher_used": cipher_type.value,
+        "deployment_mode": "Równomierne" if is_uniform else "Ciągłe",
+        "bits_extracted": total_bits,
+        "decrypted_text": decrypted_text
+    }
