@@ -99,3 +99,17 @@ Odpowiada za bezstratne manipulacje na bitach (steganografia) oraz operacje mate
 - Czytelność i ergonomia interfejsu użytkownika.
 
 ![DancingShrek](https://media.tenor.com/cFPFHbvs2yQAAAAM/shrek-shrek-dance.gif)
+
+
+## Starting sequence:
+# Terminal 1
+cd backend
+python3 -m pip install -r requirements.txt
+uvicorn main:app --port 3000 --reload
+
+# Terminal 2
+cd frontend
+yarn install
+yarn dev
+
+# Pliki do testów final.bmp (zakodowany), stego.bmp, test.bpm (do zakodowania)

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from app.schemas.decoder_schema import DecoderResponse
 from app.services import decoder_service
+import traceback
 
 router = APIRouter(prefix="/decoder", tags=["Decoder Module"])
 
@@ -31,7 +32,9 @@ async def decode_file(
         )
         
     except ValueError as e:
+        print(f"Decoder ValueError: {str(e)}\n{traceback.format_exc()}")
         # Błąd wyrzucany, gdy plik jest "czysty" (brak wiadomości)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"Decoder Exception: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Błąd wewnętrzny dekodera: {str(e)}")
