@@ -8,7 +8,8 @@ router = APIRouter(prefix="/decoder", tags=["Decoder Module"])
 @router.post("/process", response_model=DecoderResponse)
 async def decode_file(
     file: UploadFile = File(...),
-    media_type: str = Form(..., description="Typ pliku: 'bmp' lub 'wav'")
+    media_type: str = Form(..., description="Typ pliku: 'bmp' lub 'wav'"),
+    key: str = Form("", description="Klucz deszyfrowania, jeśli szyfr go wymaga")
 ):
     """
     Kompletny proces dekodowania:
@@ -20,7 +21,7 @@ async def decode_file(
         content = await file.read()
         
         # Wywołanie głównej logiki
-        result = decoder_service.process_file(content, media_type)
+        result = decoder_service.process_file(content, media_type, key)
         
         return DecoderResponse(
             status="success",
