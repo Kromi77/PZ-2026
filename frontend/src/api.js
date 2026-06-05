@@ -113,10 +113,11 @@ export async function injectHeader(file, cipher, sliders, bits, deploymentMode, 
   return await response.blob();
 }
 
-export async function decodeFile(file, mediaType) {
+export async function decodeFile(file, mediaType, key = '') {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('media_type', mediaType);
+  formData.append('key', key);
 
   const response = await fetch(`${API_BASE}/decoder/process`, {
     method: 'POST',

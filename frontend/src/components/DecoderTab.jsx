@@ -5,7 +5,8 @@ import MediaPreview from './MediaPreview';
 export default function DecoderTab() {
   const [file, setFile] = useState(null);
   const [mediaType, setMediaType] = useState('bmp'); // 'bmp' | 'wav'
-  
+  const [key, setKey] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -34,7 +35,7 @@ export default function DecoderTab() {
     setResult(null);
 
     try {
-      const res = await decodeFile(file, mediaType);
+      const res = await decodeFile(file, mediaType, key);
       setResult(res);
     } catch (err) {
       setError(err.message || 'An error occurred during decoding');
@@ -64,6 +65,20 @@ export default function DecoderTab() {
               <input type="file" accept=".bmp,.wav" onChange={handleFileChange} className="hidden" />
             </label>
             {file && <p className="text-sm text-green-600 font-semibold truncate">Selected: {file.name}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="font-semibold text-gray-700">Key</label>
+            <input
+              type="text"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="Enter key if required"
+              className="border rounded p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <p className="text-xs text-gray-500">
+              Required for Caesar, Vigenere, XOR, Rail Fence and Columnar. Leave empty for Atbash and ROT13.
+            </p>
           </div>
 
           <button 
