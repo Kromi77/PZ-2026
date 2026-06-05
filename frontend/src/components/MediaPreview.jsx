@@ -1,4 +1,5 @@
 import React from 'react';
+import { UI_TEXT } from '../i18n';
 
 export default function MediaPreview({ file, label, mediaType }) {
   if (!file) return null;
@@ -12,7 +13,7 @@ export default function MediaPreview({ file, label, mediaType }) {
         <img src={url} alt={label} className="max-w-full h-auto border rounded shadow" style={{maxHeight: '300px'}} />
       ) : (
         <audio controls src={url} className="w-full mt-2">
-          Your browser does not support the audio element.
+          {UI_TEXT.mediaPreview.audioNotSupported}
         </audio>
       )}
     </div>
