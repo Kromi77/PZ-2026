@@ -40,6 +40,34 @@ def _derive_key_from_sliders(cipher_type: Cipher, sliders: list[int]) -> Any:
     # Atbash i ROT13 nie wymagają dynamicznego klucza (ROT13 ma stały shift 13)
     return None
 
+def _prepare_user_key(cipher_type: Cipher, key: str) -> Any:
+    key = key.strip() if key else ""
+
+    if cipher_type in (Cipher.ATBASH, Cipher.ROT13):
+        return None
+
+    if not key:
+        raise ValueError(f"Szyfr {cipher_type.value} wymaga podania klucza deszyfrowania.")
+
+    if cipher_type == Cipher.CEZAR:
+        try:
+            return int(key)
+        except ValueError:
+            raise ValueError("Klucz dla Szyfru Cezara musi być liczbą całkowitą.")
+
+    if cipher_type == Cipher.RAIL_FENCE:
+        try:
+            rails = int(key)
+        except ValueError:
+            raise ValueError("Klucz dla Szyfru płotkowego musi być liczbą całkowitą.")
+
+        if rails < 2:
+            raise ValueError("Klucz dla Szyfru płotkowego musi być większy lub równy 2.")
+
+        return rails
+
+    return key
+
 def _decrypt_text(encrypted_text: str, cipher_type: Cipher, key: Any) -> str:
     """Kieruje tekst do odpowiedniego algorytmu deszyfrującego używając poprawnego nazewnictwa."""
     if cipher_type == Cipher.CEZAR:
@@ -65,7 +93,7 @@ def _decrypt_text(encrypted_text: str, cipher_type: Cipher, key: Any) -> str:
         
     return f"[Błąd - nieznany szyfr {cipher_type.value}] {encrypted_text}"
 
-def process_file(file_content: bytes, media_type: str) -> dict:
+def process_file(file_content: bytes, media_type: str, key: str = "") -> dict:
     """
     Główna funkcja Modułu Dekodera realizująca:
     1. Analizę pliku
@@ -117,7 +145,7 @@ def process_file(file_content: bytes, media_type: str) -> dict:
     # ---------------------------------------------------------
     # Pkt 3 cd.: Deszyfrowanie (Kryptografia)
     # ---------------------------------------------------------
-    crypto_key = _derive_key_from_sliders(cipher_type, sliders)
+    crypto_key = _prepare_user_key(cipher_type, key)
     decrypted_text = _decrypt_text(encrypted_message, cipher_type, crypto_key)
 
     return {
