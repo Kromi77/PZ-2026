@@ -78,10 +78,16 @@ export const UI_TEXT = {
     no: "Nie",
   },
 
-  errors: {
-    missingText: "Wpisz tekst do zaszyfrowania.",
-    missingFile: "Wybierz plik.",
-    encodingFailed: "Wystąpił błąd podczas kodowania.",
-    decodingFailed: "Wystąpił błąd podczas odczytywania.",
-  },
+errors: {
+  missingText: "Wpisz tekst do zaszyfrowania.",
+  missingFile: "Wybierz plik.",
+  missingKey: "Podaj klucz dla wybranego szyfru.",
+  invalidCaesarKey: "Klucz dla szyfru Cezara musi być liczbą całkowitą.",
+  invalidRailFenceKey: "Klucz dla szyfru płotkowego musi być liczbą całkowitą większą lub równą 2.",
+  encodingFailed: "Wystąpił błąd podczas kodowania.",
+  encryptionFailed: "Nie udało się zaszyfrować wiadomości.",
+  hidingFailed: "Nie udało się ukryć wiadomości w pliku.",
+  headerInjectionFailed: "Nie udało się dodać nagłówka.",
+  decodingFailed: "Wystąpił błąd podczas odczytywania.",
+}
 };

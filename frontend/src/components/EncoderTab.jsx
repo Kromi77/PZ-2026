@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
-import { CipherType, encryptText, hideSteganography, injectHeader } from '../api';
-import MediaPreview from './MediaPreview';
-import { UI_TEXT } from '../i18n';
+import React, { useState } from "react";
+import {
+  CipherType,
+  encryptText,
+  hideSteganography,
+  injectHeader,
+} from "../api";
+import MediaPreview from "./MediaPreview";
+import { UI_TEXT } from "../i18n";
 
 export default function EncoderTab() {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [cipher, setCipher] = useState(CipherType.CEZAR);
-  const [key, setKey] = useState('3');
+  const [key, setKey] = useState("3");
   const [file, setFile] = useState(null);
-  const [mediaType, setMediaType] = useState('bmp'); // 'bmp' | 'wav'
+  const [mediaType, setMediaType] = useState("bmp"); // 'bmp' | 'wav'
   const [sliders, setSliders] = useState([0, 0, 0]); // R, G, B for BMP. For WAV, use sliders[0]
   const [deploymentMode, setDeploymentMode] = useState(0); // 0 = Ciągłe, 1 = Równomierne;
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [resultFile, setResultFile] = useState(null);
 
   const handleCipherChange = (e) => {
@@ -21,15 +26,15 @@ export default function EncoderTab() {
     setCipher(newCipher);
 
     if (newCipher === CipherType.CEZAR || newCipher === CipherType.RAIL_FENCE) {
-      setKey('3');
+      setKey("3");
     } else if (
       newCipher === CipherType.VIGENERE ||
       newCipher === CipherType.COLUMNAR ||
       newCipher === CipherType.XOR
     ) {
-      setKey('SECRET');
+      setKey("SECRET");
     } else {
-      setKey('');
+      setKey("");
     }
   };
 
@@ -39,10 +44,10 @@ export default function EncoderTab() {
       setFile(selectedFile);
       setResultFile(null);
 
-      if (selectedFile.name.toLowerCase().endsWith('.wav')) {
-        setMediaType('wav');
+      if (selectedFile.name.toLowerCase().endsWith(".wav")) {
+        setMediaType("wav");
       } else {
-        setMediaType('bmp');
+        setMediaType("bmp");
       }
     }
   };
@@ -51,6 +56,32 @@ export default function EncoderTab() {
     const newSliders = [...sliders];
     newSliders[index] = parseInt(value, 10);
     setSliders(newSliders);
+  };
+
+  const validateCipherKey = () => {
+    const trimmedKey = key.trim();
+
+    if (cipher === CipherType.ATBASH || cipher === CipherType.ROT13) {
+      return "";
+    }
+
+    if (!trimmedKey) {
+      return UI_TEXT.errors.missingKey;
+    }
+
+    if (cipher === CipherType.CEZAR) {
+      if (!/^-?\d+$/.test(trimmedKey)) {
+        return UI_TEXT.errors.invalidCaesarKey;
+      }
+    }
+
+    if (cipher === CipherType.RAIL_FENCE) {
+      if (!/^\d+$/.test(trimmedKey) || Number(trimmedKey) < 2) {
+        return UI_TEXT.errors.invalidRailFenceKey;
+      }
+    }
+
+    return "";
   };
 
   const handleEncode = async () => {
@@ -64,8 +95,16 @@ export default function EncoderTab() {
       return;
     }
 
+    const keyError = validateCipherKey();
+
+    if (keyError) {
+      setError(keyError);
+
+      return;
+    }
+
     setLoading(true);
-    setError('');
+    setError("");
     setResultFile(null);
 
     try {
@@ -76,21 +115,29 @@ export default function EncoderTab() {
       const bits = new Blob([encryptedText]).size * 8 + 32; // 32 bits for the length prefix
 
       // 2. Hide message using Steganography
-      const modifiedMediaBlob = await hideSteganography(file, encryptedText, mediaType);
+      const modifiedMediaBlob = await hideSteganography(
+        file,
+        encryptedText,
+        mediaType,
+      );
 
       // 3. Inject Header
-      const modifiedMediaFile = new File([modifiedMediaBlob], file.name, { type: file.type });
+      const modifiedMediaFile = new File([modifiedMediaBlob], file.name, {
+        type: file.type,
+      });
       const finalBlob = await injectHeader(
         modifiedMediaFile,
         cipher,
         sliders,
         bits,
         deploymentMode,
-        mediaType
+        mediaType,
       );
 
       // 4. Create result File
-      const finalFile = new File([finalBlob], `encoded_${file.name}`, { type: file.type });
+      const finalFile = new File([finalBlob], `encoded_${file.name}`, {
+        type: file.type,
+      });
       setResultFile(finalFile);
     } catch (err) {
       setError(err.message || UI_TEXT.errors.encodingFailed);
@@ -207,7 +254,7 @@ export default function EncoderTab() {
             )}
           </div>
 
-          {mediaType === 'bmp' && (
+          {mediaType === "bmp" && (
             <div className="flex flex-col gap-2">
               <label className="font-semibold text-gray-700">
                 {UI_TEXT.encoder.bmpSliders}
@@ -259,7 +306,7 @@ export default function EncoderTab() {
             </div>
           )}
 
-          {mediaType === 'wav' && (
+          {mediaType === "wav" && (
             <div className="flex flex-col gap-2">
               <label className="font-semibold text-gray-700">
                 {UI_TEXT.encoder.wavSlider}
