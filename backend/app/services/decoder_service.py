@@ -47,7 +47,7 @@ def _prepare_user_key(cipher_type: Cipher, key: str) -> Any:
         return None
 
     if not key:
-        raise ValueError(f"Szyfr {cipher_type.value} wymaga podania klucza deszyfrowania.")
+        raise ValueError(f"{cipher_type.value} wymaga podania klucza deszyfrowania.")
 
     if cipher_type == Cipher.CEZAR:
         try:
