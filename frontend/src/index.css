@@ -61,3 +61,42 @@ input[type="range"] {
 #root {
   min-height: 100vh;
 }
+
+.custom-range-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: rgb(196 181 253);
+  border: none;
+  box-shadow: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.custom-range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 7px rgba(167, 139, 250, 0.22);
+}
+
+.custom-range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: rgb(196 181 253);
+  border: none;
+  box-shadow: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.custom-range-slider::-moz-range-thumb:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 7px rgba(167, 139, 250, 0.22);
+}
+
+.custom-range-slider:focus {
+  outline: none;
+}
