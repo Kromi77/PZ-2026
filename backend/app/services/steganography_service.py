@@ -6,8 +6,6 @@ lub próbek dźwięku (WAV).
 """
 
 import struct
-import io
-from typing import Tuple, Optional
 
 
 class LSBSteganography:
@@ -67,9 +65,14 @@ class LSBSteganography:
         except UnicodeDecodeError:
             # Fallback na latin-1 jeśli UTF-8 nie działa
             return text_bytes.decode('latin-1', errors='replace')
+
+    @staticmethod
+    def calculate_message_bits(message: str) -> int:
+        """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości (prefiks 32-bit + dane)."""
+        return len(LSBSteganography.text_to_binary(message))
     
     @staticmethod
-    def hide_in_bmp(bmp_data: bytes, secret_message: str) -> bytes:
+    def hide_in_bmp(bmp_data: bytes, secret_message: str, uniform: bool = False) -> bytes:
         """
         Ukrywa zaszyfrowaną wiadomość w pliku BMP.
         
@@ -83,29 +86,45 @@ class LSBSteganography:
         Returns:
             Zmodyfikowana zawartość BMP z ukrytą wiadomością
         """
-        # BMP header ma 54 bajty, dane pikseli zaczynają się od bajtu 54
-        header = bmp_data[:54]
-        pixel_data = bytearray(bmp_data[54:])
+        # Odczytaj offset danych pikseli z nagłówka BMP (bajty 10-13)
+        pixel_offset = struct.unpack('<I', bmp_data[10:14])[0]
+
+        header = bmp_data[:pixel_offset]
+        pixel_data = bytearray(bmp_data[pixel_offset:])
         
         # Konwertuj wiadomość na bity
         secret_bits = LSBSteganography.text_to_binary(secret_message)
         
+        n_bits = len(secret_bits)
+        n_carrier = len(pixel_data)
+
         # Sprawdź czy jest wystarczająco miejsca
-        if len(secret_bits) > len(pixel_data):
+        if n_bits > n_carrier:
             raise ValueError(
-                f"Wiadomość zbyt długa. Maksimum bitów: {len(pixel_data)}, "
-                f"potrzeba: {len(secret_bits)}"
+                f"Wiadomość zbyt długa. Maksimum bitów: {n_carrier}, "
+                f"potrzeba: {n_bits}"
             )
-        
-        # Ukryj bity w LSB pikseli
-        for i, bit in enumerate(secret_bits):
-            # Usuń LSB i wstaw tajny bit
-            pixel_data[i] = (pixel_data[i] & 0xFE) | int(bit)
+
+        if uniform:
+            # Model równomiernego rozpraszania: krok = pojemność / liczba_bitów
+            step = n_carrier / n_bits
+            for i, bit in enumerate(secret_bits):
+                pos = int(i * step)
+                pixel_data[pos] = (pixel_data[pos] & 0xFE) | int(bit)
+        else:
+            # Ukryj bity w LSB pikseli (tryb ciągły)
+            for i, bit in enumerate(secret_bits):
+                pixel_data[i] = (pixel_data[i] & 0xFE) | int(bit)
         
         return header + bytes(pixel_data)
     
     @staticmethod
-    def extract_from_bmp(bmp_data: bytes, message_length: int = None) -> str:
+    def extract_from_bmp(
+        bmp_data: bytes,
+        message_length: int = None,
+        uniform: bool = False,
+        total_bits: int = None,
+    ) -> str:
         """
         Ekstraktuje ukrytą wiadomość z pliku BMP.
         
@@ -116,19 +135,25 @@ class LSBSteganography:
         Returns:
             Wyekstraktowana zaszyfrowana wiadomość
         """
-        # BMP header ma 54 bajty
-        pixel_data = bmp_data[54:]
-        
-        # Ekstrakcja bitów
-        secret_bits = ''
-        for byte_val in pixel_data:
-            secret_bits += str(byte_val & 1)  # Weź LSB
+        # Odczytaj offset danych pikseli z nagłówka BMP (bajty 10-13)
+        pixel_offset = struct.unpack('<I', bmp_data[10:14])[0]
+        pixel_data = bmp_data[pixel_offset:]
+
+        if uniform and total_bits:
+            # Odczyt z tych samych pozycji co przy ukrywaniu
+            step = len(pixel_data) / total_bits
+            secret_bits = ''.join(
+                str(pixel_data[int(i * step)] & 1) for i in range(total_bits)
+            )
+        else:
+            # Ekstrakcja bitów ciągła
+            secret_bits = ''.join(str(byte_val & 1) for byte_val in pixel_data)
         
         # Konwertuj bity na tekst (binary_to_text sam obsługuje separator)
         return LSBSteganography.binary_to_text(secret_bits)
     
     @staticmethod
-    def hide_in_wav(wav_data: bytes, secret_message: str) -> bytes:
+    def hide_in_wav(wav_data: bytes, secret_message: str, uniform: bool = False) -> bytes:
         """
         Ukrywa zaszyfrowaną wiadomość w pliku WAV.
         
@@ -144,7 +169,6 @@ class LSBSteganography:
         """
         # Znajdź gdzie zaczynają się dane dźwiękowe (zwykle byte 44)
         # Szukamy znacznika 'data'
-        header = wav_data
         data_chunk_pos = wav_data.find(b'data')
         
         if data_chunk_pos == -1:
@@ -161,16 +185,26 @@ class LSBSteganography:
         # Konwertuj wiadomość na bity
         secret_bits = LSBSteganography.text_to_binary(secret_message)
         
+        n_bits = len(secret_bits)
+        n_carrier = len(audio_data)
+
         # Sprawdź czy jest wystarczająco miejsca
-        if len(secret_bits) > len(audio_data):
+        if n_bits > n_carrier:
             raise ValueError(
-                f"Wiadomość zbyt długa. Maksimum bitów: {len(audio_data)}, "
-                f"potrzeba: {len(secret_bits)}"
+                f"Wiadomość zbyt długa. Maksimum bitów: {n_carrier}, "
+                f"potrzeba: {n_bits}"
             )
-        
-        # Ukryj bity w LSB próbek dźwięku
-        for i, bit in enumerate(secret_bits):
-            audio_data[i] = (audio_data[i] & 0xFE) | int(bit)
+
+        if uniform:
+            # Model równomiernego rozpraszania: krok = pojemność / liczba_bitów
+            step = n_carrier / n_bits
+            for i, bit in enumerate(secret_bits):
+                pos = int(i * step)
+                audio_data[pos] = (audio_data[pos] & 0xFE) | int(bit)
+        else:
+            # Ukryj bity w LSB próbek dźwięku (tryb ciągły)
+            for i, bit in enumerate(secret_bits):
+                audio_data[i] = (audio_data[i] & 0xFE) | int(bit)
         
         # Rekonstruuj plik WAV
         result = bytearray(wav_data)
@@ -179,7 +213,11 @@ class LSBSteganography:
         return bytes(result)
     
     @staticmethod
-    def extract_from_wav(wav_data: bytes) -> str:
+    def extract_from_wav(
+        wav_data: bytes,
+        uniform: bool = False,
+        total_bits: int = None,
+    ) -> str:
         """
         Ekstraktuje ukrytą wiadomość z pliku WAV.
         
@@ -203,31 +241,65 @@ class LSBSteganography:
         audio_data_start = data_chunk_pos + 8
         audio_data = wav_data[audio_data_start:audio_data_start + data_size]
         
-        # Ekstrakcja bitów
-        secret_bits = ''
-        for byte_val in audio_data:
-            secret_bits += str(byte_val & 1)
+        if uniform and total_bits:
+            # Odczyt z tych samych pozycji co przy ukrywaniu
+            step = len(audio_data) / total_bits
+            secret_bits = ''.join(
+                str(audio_data[int(i * step)] & 1) for i in range(total_bits)
+            )
+        else:
+            # Ekstrakcja bitów ciągła
+            secret_bits = ''.join(str(byte_val & 1) for byte_val in audio_data)
         
         # Konwertuj bity na tekst (binary_to_text sam obsługuje separator)
         return LSBSteganography.binary_to_text(secret_bits)
 
 
 # Funkcje do użytku w routerze
-def hide_message_in_bmp(bmp_file_content: bytes, encrypted_message: str) -> bytes:
-    """Wrapper - ukrywa wiadomość w BMP."""
-    return LSBSteganography.hide_in_bmp(bmp_file_content, encrypted_message)
+def hide_message_in_bmp(
+    bmp_file_content: bytes,
+    encrypted_message: str,
+    uniform: bool = False,
+) -> bytes:
+    """Wrapper - ukrywa wiadomość w BMP (tryb ciągły lub równomierny)."""
+    return LSBSteganography.hide_in_bmp(bmp_file_content, encrypted_message, uniform)
 
 
-def extract_message_from_bmp(bmp_file_content: bytes) -> str:
-    """Wrapper - ekstraktuje wiadomość z BMP."""
-    return LSBSteganography.extract_from_bmp(bmp_file_content)
+def extract_message_from_bmp(
+    bmp_file_content: bytes,
+    uniform: bool = False,
+    total_bits: int = None,
+) -> str:
+    """Wrapper - ekstraktuje wiadomość z BMP (tryb ciągły lub równomierny)."""
+    return LSBSteganography.extract_from_bmp(
+        bmp_file_content,
+        uniform=uniform,
+        total_bits=total_bits,
+    )
 
 
-def hide_message_in_wav(wav_file_content: bytes, encrypted_message: str) -> bytes:
-    """Wrapper - ukrywa wiadomość w WAV."""
-    return LSBSteganography.hide_in_wav(wav_file_content, encrypted_message)
+def calculate_message_bits(message: str) -> int:
+    """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości — do zapisu w nagłówku."""
+    return LSBSteganography.calculate_message_bits(message)
 
 
-def extract_message_from_wav(wav_file_content: bytes) -> str:
-    """Wrapper - ekstraktuje wiadomość z WAV."""
-    return LSBSteganography.extract_from_wav(wav_file_content)
+def hide_message_in_wav(
+    wav_file_content: bytes,
+    encrypted_message: str,
+    uniform: bool = False,
+) -> bytes:
+    """Wrapper - ukrywa wiadomość w WAV (tryb ciągły lub równomierny)."""
+    return LSBSteganography.hide_in_wav(wav_file_content, encrypted_message, uniform)
+
+
+def extract_message_from_wav(
+    wav_file_content: bytes,
+    uniform: bool = False,
+    total_bits: int = None,
+) -> str:
+    """Wrapper - ekstraktuje wiadomość z WAV (tryb ciągły lub równomierny)."""
+    return LSBSteganography.extract_from_wav(
+        wav_file_content,
+        uniform=uniform,
+        total_bits=total_bits,
+    )
