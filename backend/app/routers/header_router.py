@@ -1,49 +1,49 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 import io
+from typing import Literal
 from app.services import headerBMP_service as BMPService
 from app.services import headerWAV_service as WAVService
-from app.schemas.header_schema import BMPHeader, WAVHeader
+from app.schemas.header_schema import BMPHeader, WAVHeader, Cipher, DeploymentMode
 
-
-router = APIRouter()
-
-"""
-!!!WSZYSTKIE ENDPOINTY STWORZONE TYMCZASOWO DO PÓŹNIEJSZEGO USUNIĘCIA!!!
-"""
-
+router = APIRouter(tags=["Header"])
 
 def parse_bmp_header(
-    cipher: str = Form("Szyfr Cezara"),
-    sliderR: int = Form(0),
-    sliderG: int = Form(4),
-    sliderB: int = Form(8),
-    bits: int = Form(123456789),
-    deployment_mode: int = Form(0),
+    cipher: Cipher = Form(...),
+    sliderR: int = Form(..., ge=0, le=8),
+    sliderG: int = Form(..., ge=0, le=8),
+    sliderB: int = Form(..., ge=0, le=8),
+    bits: int = Form(..., ge=0, le=34359738367),
+    deployment_mode: int = Form(..., ge=0, le=1),
 ) -> BMPHeader:
     return BMPHeader(
         cipher=cipher,
         sliders=[sliderR, sliderG, sliderB],
         bits=bits,
-        deployment_mode=deployment_mode,
+        deployment_mode=DeploymentMode(deployment_mode),
     )
 
 
 def parse_wav_header(
-    cipher: str = Form("Szyfr Cezara"),
-    slider: int = Form(8),
-    bits: int = Form(123456789),
-    deployment_mode: int = Form(0),
+    cipher: Cipher = Form(...),
+    slider: int = Form(..., ge=0, le=8),
+    bits: int = Form(..., ge=0, le=34359738367),
+    deployment_mode: int = Form(..., ge=0, le=1),
 ) -> WAVHeader:
     return WAVHeader(
         cipher=cipher,
         slider=slider,
         bits=bits,
-        deployment_mode=deployment_mode,
+        deployment_mode=DeploymentMode(deployment_mode),
     )
 
 
-@router.post("/header/inject-bmp/")
+@router.post(
+    "/header/inject-bmp/",
+    response_class=StreamingResponse,
+    summary="Inject BMP Header",
+    description="Wstrzykuje dodatkowe dane do nagłówka pliku BMP i zwraca zmodyfikowany plik obrazu."
+)
 async def inject_bmp_route(header: BMPHeader = Depends(parse_bmp_header), file: UploadFile = File(...)):
     # przygotowanie dodatkowych danych z BMPHeader
     additional_header_data = BMPService.bmp_header_to_bits(header)
@@ -62,14 +62,19 @@ async def inject_bmp_route(header: BMPHeader = Depends(parse_bmp_header), file: 
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/header/extract-bmp/")
+@router.post(
+    "/header/extract-bmp/",
+    response_class=StreamingResponse,
+    summary="Extract and Restore BMP",
+    description="Usuwa wcześniej dodane dane z nagłówka pliku BMP i przywraca jego oryginalną postać."
+)
 async def extract_bmp_route(file: UploadFile = File(...)):
     # długość wcześniej dodanych danych
     data_length_to_remove = 8
 
     try:
         # wywołanie funkcji przywracającej oryginalny plik
-        restored_bmp = BMPService.remove_data_from_bmp_header(file.file, data_length_to_remove)
+        restored_bmp = BMPService.remove_data_from_bmp_header(file.file)
 
         # zwrot przywróconego pliku
         return StreamingResponse(
@@ -81,7 +86,12 @@ async def extract_bmp_route(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/header/extract-bmp-header/")
+@router.post(
+    "/header/extract-bmp-header/",
+    response_model=BMPHeader,
+    summary="Extract BMP Header Info",
+    description="Odczytuje parametry ukryte w nagłówku pliku BMP (szyfr, wartości suwaków, bity, tryb) i zwraca je w formacie JSON."
+)
 async def extract_bmp_header_route(file: UploadFile = File(...)):
     try:
         # odczyt BMPHeader z pliku
@@ -93,7 +103,12 @@ async def extract_bmp_header_route(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/header/inject-wav/")
+@router.post(
+    "/header/inject-wav/",
+    response_class=StreamingResponse,
+    summary="Inject WAV Header",
+    description="Wstrzykuje dodatkowe dane do nagłówka pliku audio WAV i zwraca zmodyfikowany plik."
+)
 async def inject_wav_route(header: WAVHeader = Depends(parse_wav_header), file: UploadFile = File(...)):
     # Przygotowanie danych (8 bajtów)
     additional_header_data = WAVService.wav_header_to_bits(header)
@@ -112,7 +127,12 @@ async def inject_wav_route(header: WAVHeader = Depends(parse_wav_header), file: 
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/header/extract-wav/")
+@router.post(
+    "/header/extract-wav/",
+    response_class=StreamingResponse,
+    summary="Extract and Restore WAV",
+    description="Usuwa wcześniej dodane dane z nagłówka pliku audio WAV i przywraca jego oryginalną postać."
+)
 async def extract_wav_route(file: UploadFile = File(...)):
     try:
         # Tutaj również przekazujemy bezpośrednio file.file
@@ -125,8 +145,14 @@ async def extract_wav_route(file: UploadFile = File(...)):
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-@router.post("/header/extract-wav-header/")
+
+
+@router.post(
+    "/header/extract-wav-header/",
+    response_model=WAVHeader,
+    summary="Extract WAV Header Info",
+    description="Odczytuje parametry ukryte w nagłówku pliku WAV (szyfr, wartość suwaka, bity, tryb) i zwraca je w formacie JSON."
+)
 async def extract_wav_header_route(file: UploadFile = File(...)):
     try:
         # odczyt WAVHeader z pliku
@@ -136,7 +162,3 @@ async def extract_wav_header_route(file: UploadFile = File(...)):
         return wav_header
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-"""
-!!!KONIEC TYMCZASOWYCH ENDPOINTÓW!!!
-"""

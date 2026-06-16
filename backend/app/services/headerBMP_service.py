@@ -27,6 +27,8 @@ def bmp_header_to_bits_without_hash(header: BMPHeader) -> bytes:
     
     # Zakoduj bits (35 bitów)
     bits = header.bits
+    if not (0 <= bits <= 34359738367):
+        raise ValueError("bits value out of range 0-34359738367")
     
     # Zakoduj deployment_mode (1 bit, wartość 0 lub 1)
     deployment_mode = int(header.deployment_mode)
@@ -177,8 +179,9 @@ def inject_data_to_bmp_header(input_file: io.BytesIO, additional_header_data: by
     return output_file
 
 
-def remove_data_from_bmp_header(input_file: io.BytesIO, data_length_to_remove: int) -> io.BytesIO:
+def remove_data_from_bmp_header(input_file: io.BytesIO) -> io.BytesIO:
     # odczyt danych z pliku
+    data_length_to_remove: int = 8;
     input_file.seek(0)
     file_content = input_file.read()
 

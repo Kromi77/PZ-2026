@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.services import xorCipher_service as xorService
 from app.schemas import xorCipher_schema as xorSchema
 
-router = APIRouter()
+router = APIRouter(tags=["Cipher"])
 
 @router.post("/encrypt/xor", response_model=xorSchema.XOREncryptResponse)
 async def encrypt_xor(params: xorSchema.XOREncryptRequest):

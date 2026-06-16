@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.services import atbashCipher_service as service
 from app.schemas import atbashCipher_schema as schema
 
-router = APIRouter()
+router = APIRouter(tags=["Cipher"])
 
 @router.post("/atbash/encrypt", response_model=schema.AtbashEncryptResponse)
 async def encrypt_atbash(params: schema.AtbashEncryptRequest):

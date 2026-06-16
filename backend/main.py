@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routers import xorCipher_router as xor
 from app.routers import cezarCipher_router as cezar
 from app.routers import atbashCipher_router as atbash
@@ -9,8 +10,17 @@ from app.routers import vigenereCipher_router as vinegre
 from app.routers import columnarCipher_router as columnar
 from app.routers import header_router as header
 from app.routers import steganography_router as stego
+from app.routers import decoder_router as decoder
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
@@ -29,6 +39,7 @@ app.include_router(vinegre.router)
 app.include_router(columnar.router)
 app.include_router(header.router)
 app.include_router(stego.router)
+app.include_router(decoder.router)
 
 #should be at the end of file
 if __name__ == "__main__":

@@ -75,14 +75,17 @@ class LSBSteganography:
     def hide_in_bmp(bmp_data: bytes, secret_message: str, uniform: bool = False) -> bytes:
         """
         Ukrywa zaszyfrowaną wiadomość w pliku BMP.
-        
-        Metoda: Modyfikuje najmniej znaczący bit (LSB) każdego bajtu piksela.
-        Każdy bajt BMP może ukryć 1 bit wiadomości.
-        
+
+        Tryb ciągły (uniform=False): bity zapisywane kolejno od bajtu 0.
+        Tryb równomierny (uniform=True): bity rozłożone równomiernie w całym
+        obszarze pikseli wg wzoru: pozycja[i] = floor(i * krok),
+        gdzie krok = pojemność_nośnika / liczba_bitów_wiadomości.
+
         Args:
             bmp_data: Zawartość pliku BMP
             secret_message: Zaszyfrowana wiadomość do ukrycia
-            
+            uniform: Czy użyć równomiernego rozmieszczenia
+
         Returns:
             Zmodyfikowana zawartość BMP z ukrytą wiadomością
         """
@@ -92,7 +95,9 @@ class LSBSteganography:
         header = bmp_data[:pixel_offset]
         pixel_data = bytearray(bmp_data[pixel_offset:])
         
-        # Konwertuj wiadomość na bity
+        header = bmp_data[:pixel_offset]
+        pixel_data = bytearray(bmp_data[pixel_offset:])
+
         secret_bits = LSBSteganography.text_to_binary(secret_message)
         
         n_bits = len(secret_bits)
@@ -117,7 +122,7 @@ class LSBSteganography:
                 pixel_data[i] = (pixel_data[i] & 0xFE) | int(bit)
         
         return header + bytes(pixel_data)
-    
+
     @staticmethod
     def extract_from_bmp(
         bmp_data: bytes,
@@ -127,11 +132,17 @@ class LSBSteganography:
     ) -> str:
         """
         Ekstraktuje ukrytą wiadomość z pliku BMP.
-        
+
+        W trybie równomiernym (uniform=True) wymagany jest parametr total_bits
+        (liczba bitów wiadomości zapisana wcześniej w nagłówku BMPHeader.bits),
+        aby odtworzyć ten sam krok rozpraszania co przy ukrywaniu.
+
         Args:
             bmp_data: Zawartość pliku BMP
-            message_length: Długość wiadomości (jeśli znana)
-            
+            message_length: Nieużywane, zachowane dla kompatybilności
+            uniform: Czy wiadomość była ukryta trybem równomiernym
+            total_bits: Całkowita liczba ukrytych bitów (z nagłówka BMPHeader.bits)
+
         Returns:
             Wyekstraktowana zaszyfrowana wiadomość
         """
@@ -156,33 +167,32 @@ class LSBSteganography:
     def hide_in_wav(wav_data: bytes, secret_message: str, uniform: bool = False) -> bytes:
         """
         Ukrywa zaszyfrowaną wiadomość w pliku WAV.
-        
-        Metoda: Modyfikuje najmniej znaczący bit każdej próbki dźwięku.
-        WAV zawiera nagłówek (zwykle 44 bajty) i dane dźwiękowe.
-        
+
+        Tryb ciągły (uniform=False): bity zapisywane kolejno od pierwszej próbki.
+        Tryb równomierny (uniform=True): bity rozłożone równomiernie w całym
+        obszarze danych audio wg wzoru: pozycja[i] = floor(i * krok),
+        gdzie krok = pojemność_nośnika / liczba_bitów_wiadomości.
+
         Args:
             wav_data: Zawartość pliku WAV
             secret_message: Zaszyfrowana wiadomość do ukrycia
-            
+            uniform: Czy użyć równomiernego rozmieszczenia
+
         Returns:
             Zmodyfikowana zawartość WAV z ukrytą wiadomością
         """
         # Znajdź gdzie zaczynają się dane dźwiękowe (zwykle byte 44)
         # Szukamy znacznika 'data'
         data_chunk_pos = wav_data.find(b'data')
-        
         if data_chunk_pos == -1:
             raise ValueError("Nie znaleziono sekcji 'data' w pliku WAV")
-        
-        # Wielkość danych audio znajduje się 4 bajty po 'data'
+
         data_size_pos = data_chunk_pos + 4
         data_size = struct.unpack('<I', wav_data[data_size_pos:data_size_pos + 4])[0]
-        
-        # Dane dźwiękowe zaczynają się 8 bajtów po 'data'
+
         audio_data_start = data_chunk_pos + 8
         audio_data = bytearray(wav_data[audio_data_start:audio_data_start + data_size])
-        
-        # Konwertuj wiadomość na bity
+
         secret_bits = LSBSteganography.text_to_binary(secret_message)
         
         n_bits = len(secret_bits)
@@ -209,9 +219,8 @@ class LSBSteganography:
         # Rekonstruuj plik WAV
         result = bytearray(wav_data)
         result[audio_data_start:audio_data_start + data_size] = audio_data
-        
         return bytes(result)
-    
+
     @staticmethod
     def extract_from_wav(
         wav_data: bytes,
@@ -220,24 +229,26 @@ class LSBSteganography:
     ) -> str:
         """
         Ekstraktuje ukrytą wiadomość z pliku WAV.
-        
+
+        W trybie równomiernym (uniform=True) wymagany jest parametr total_bits
+        (liczba bitów wiadomości zapisana wcześniej w nagłówku WAVHeader.bits),
+        aby odtworzyć ten sam krok rozpraszania co przy ukrywaniu.
+
         Args:
             wav_data: Zawartość pliku WAV
-            
+            uniform: Czy wiadomość była ukryta trybem równomiernym
+            total_bits: Całkowita liczba ukrytych bitów (z nagłówka WAVHeader.bits)
+
         Returns:
             Wyekstraktowana zaszyfrowana wiadomość
         """
-        # Znajdź sekcję 'data'
         data_chunk_pos = wav_data.find(b'data')
-        
         if data_chunk_pos == -1:
             raise ValueError("Nie znaleziono sekcji 'data' w pliku WAV")
-        
-        # Wielkość danych audio
+
         data_size_pos = data_chunk_pos + 4
         data_size = struct.unpack('<I', wav_data[data_size_pos:data_size_pos + 4])[0]
-        
-        # Dane dźwiękowe
+
         audio_data_start = data_chunk_pos + 8
         audio_data = wav_data[audio_data_start:audio_data_start + data_size]
         

@@ -2,13 +2,13 @@ from fastapi import APIRouter
 from app.services import cezarCipher_service as service
 from app.schemas import cezarCipher_schema as schema
 
-router = APIRouter()
+router = APIRouter(tags=["Cipher"])
 
 @router.post("/caesar/encrypt", response_model=schema.CaesarResponse)
 async def encrypt_caesar(params: schema.CaesarEncryptRequest):
     """
     Szyfruje tekst szyfrem Cezara. 
-    Kluczem jest liczba całkowita (przesunięcie).
+    Kluczem jest liczba całkowita - przesunięcie.
     """
     # Szyfrowanie = przesunięcie w prawo (dodatnie)
     result = service.caesar_cipher(params.text, params.shift)
