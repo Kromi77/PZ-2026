@@ -4,6 +4,7 @@ import FileDropzone from "../components/common/FileDropzone";
 import FormField from "../components/common/FormField";
 import MediaPreview from "../components/common/MediaPreview";
 import WaveformComparison from "../components/WaveformComparison";
+import { DEPLOYMENT_MODES } from "../config/appConfig";
 import { CIPHER_OPTIONS, cipherRequiresKey } from "../config/ciphers";
 import { useDecoder } from "../hooks/useDecoder";
 import { UI_TEXT } from "../i18n";
@@ -23,6 +24,28 @@ function ResultRow({ label, value }) {
   );
 }
 
+function DeploymentOption({ label, checked, onChange }) {
+  return (
+    <label
+      className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
+        checked
+          ? "border-violet-300/50 bg-violet-300/10 text-violet-50 shadow-inner shadow-violet-950/20"
+          : "border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20 hover:bg-white/4 hover:text-slate-100"
+      }`}
+    >
+      <input
+        type="radio"
+        name="decode-deployment"
+        checked={checked}
+        onChange={onChange}
+        className="sr-only"
+      />
+
+      <span className="text-sm font-semibold">{label}</span>
+    </label>
+  );
+}
+
 export default function DecodeView() {
   const {
     file,
@@ -32,6 +55,8 @@ export default function DecodeView() {
     handleCipherChange,
     key,
     setKey,
+    deploymentMode,
+    handleDeploymentModeChange,
     loading,
     error,
     result,
@@ -96,6 +121,26 @@ export default function DecodeView() {
                 />
               </FormField>
             )}
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
+            <h3 className="mb-3 text-sm font-bold text-slate-100">
+              Tryb rozmieszczenia użyty przy kodowaniu
+            </h3>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DeploymentOption
+                label={UI_TEXT.encoder.continuous}
+                checked={deploymentMode === DEPLOYMENT_MODES.CONTINUOUS}
+                onChange={() => handleDeploymentModeChange(DEPLOYMENT_MODES.CONTINUOUS)}
+              />
+
+              <DeploymentOption
+                label={UI_TEXT.encoder.uniform}
+                checked={deploymentMode === DEPLOYMENT_MODES.UNIFORM}
+                onChange={() => handleDeploymentModeChange(DEPLOYMENT_MODES.UNIFORM)}
+              />
+            </div>
           </div>
 
           <Button onClick={handleDecode} disabled={loading} className="w-full">

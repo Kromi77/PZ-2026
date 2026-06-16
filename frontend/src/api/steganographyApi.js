@@ -4,7 +4,7 @@ import { CIPHER_TYPES } from '../config/ciphers'
 async function getApiError(response, fallbackMessage) {
   try {
     const error = await response.json()
-    return error.detail || fallbackMessage
+    return error.detail || error.message || fallbackMessage
   } catch {
     return fallbackMessage
   }
@@ -24,6 +24,44 @@ function getResponseOutput(data, fallbackMessage) {
   }
 
   return output
+}
+
+function normalizeMediaType(mediaType) {
+  const value = String(mediaType || '').toLowerCase()
+
+  if (value === String(MEDIA_TYPES.BMP).toLowerCase() || value === 'bmp' || value.includes('bmp')) {
+    return 'bmp'
+  }
+
+  if (value === String(MEDIA_TYPES.WAV).toLowerCase() || value === 'wav' || value.includes('wav') || value.includes('audio')) {
+    return 'wav'
+  }
+
+  return value
+}
+
+function normalizeDeploymentMode(deploymentMode) {
+  const value = String(deploymentMode ?? '').toLowerCase()
+
+  if (value === '1' || value.includes('uniform') || value.includes('równomier')) {
+    return '1'
+  }
+
+  return '0'
+}
+
+const HEADER_CIPHER_VALUES = {
+  [CIPHER_TYPES.CEZAR]: 'Szyfr Cezara',
+  [CIPHER_TYPES.VIGENERE]: "Szyfr Vigenere'a",
+  [CIPHER_TYPES.XOR]: 'Szyfr XOR',
+  [CIPHER_TYPES.ATBASH]: 'Szyfr Atbash',
+  [CIPHER_TYPES.ROT13]: 'ROT13',
+  [CIPHER_TYPES.RAIL_FENCE]: 'Szyfr płotkowy',
+  [CIPHER_TYPES.COLUMNAR]: 'Szyfr kolumnowy',
+}
+
+function getHeaderCipherValue(cipher) {
+  return HEADER_CIPHER_VALUES[cipher] ?? cipher
 }
 
 function buildEncryptionPayload(cipher, text, key) {
@@ -83,46 +121,43 @@ function buildDecryptionPayload(cipher, text, key) {
   switch (cipher) {
     case CIPHER_TYPES.CEZAR:
       return {
-        endpoint: '/caesar/decrypt',
+        endpoints: ['/caesar/decrypt'],
         body: { ...body, shift: parseInt(key, 10) },
       }
 
     case CIPHER_TYPES.VIGENERE:
       return {
-        endpoint: '/vinegre/decrypt',
+        endpoints: ['/vinegre/decrypt'],
         body: { ...body, key: String(key) },
       }
 
     case CIPHER_TYPES.XOR:
-      // XOR jest symetryczny, więc ten sam endpoint może działać jako szyfrowanie i deszyfrowanie.
       return {
-        endpoint: '/encrypt/xor',
+        endpoints: ['/decrypt/xor', '/encrypt/xor'],
         body: { ...body, key: String(key) },
       }
 
     case CIPHER_TYPES.ATBASH:
-      // Atbash jest symetryczny.
       return {
-        endpoint: '/atbash/encrypt',
+        endpoints: ['/atbash/decrypt', '/atbash/encrypt'],
         body,
       }
 
     case CIPHER_TYPES.ROT13:
-      // ROT13 jest symetryczny.
       return {
-        endpoint: '/rot13/process',
+        endpoints: ['/rot13/process'],
         body,
       }
 
     case CIPHER_TYPES.RAIL_FENCE:
       return {
-        endpoint: '/railfence/decrypt',
+        endpoints: ['/railfence/decrypt'],
         body: { ...body, rails: parseInt(key, 10) },
       }
 
     case CIPHER_TYPES.COLUMNAR:
       return {
-        endpoint: '/columnar/decrypt',
+        endpoints: ['/columnar/decrypt'],
         body: { ...body, key: String(key) },
       }
 
@@ -131,41 +166,51 @@ function buildDecryptionPayload(cipher, text, key) {
   }
 }
 
-export async function encryptText(cipher, text, key) {
-  const { endpoint, body } = buildEncryptionPayload(cipher, text, key)
-
+async function postJson(endpoint, body, fallbackMessage) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 
-  await ensureSuccessfulResponse(response, 'Encryption failed')
+  await ensureSuccessfulResponse(response, fallbackMessage)
+  return response.json()
+}
 
-  const data = await response.json()
+async function postJsonWithFallback(endpoints, body, fallbackMessage) {
+  let lastError = null
+
+  for (const endpoint of endpoints) {
+    try {
+      return await postJson(endpoint, body, fallbackMessage)
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError || new Error(fallbackMessage)
+}
+
+export async function encryptText(cipher, text, key) {
+  const { endpoint, body } = buildEncryptionPayload(cipher, text, key)
+  const data = await postJson(endpoint, body, 'Encryption failed')
+
   return getResponseOutput(data, 'Encryption response does not contain output')
 }
 
 export async function decryptText(cipher, text, key) {
-  const { endpoint, body } = buildDecryptionPayload(cipher, text, key)
+  const { endpoints, body } = buildDecryptionPayload(cipher, text, key)
+  const data = await postJsonWithFallback(endpoints, body, 'Decryption failed')
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  await ensureSuccessfulResponse(response, 'Decryption failed')
-
-  const data = await response.json()
   return getResponseOutput(data, 'Decryption response does not contain output')
 }
 
-export async function hideSteganography(file, encryptedMessage, mediaType) {
+export async function hideSteganography(file, encryptedMessage, mediaType, deploymentMode = 0) {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('encrypted_message', encryptedMessage)
-  formData.append('media_type', mediaType)
+  formData.append('media_type', normalizeMediaType(mediaType))
+  formData.append('deployment_mode', normalizeDeploymentMode(deploymentMode))
 
   const response = await fetch(`${API_BASE_URL}/steganography/hide`, {
     method: 'POST',
@@ -177,10 +222,11 @@ export async function hideSteganography(file, encryptedMessage, mediaType) {
   return response.blob()
 }
 
-export async function extractSteganography(file, mediaType) {
+export async function extractSteganography(file, mediaType, deploymentMode = 0) {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('media_type', mediaType)
+  formData.append('media_type', normalizeMediaType(mediaType))
+  formData.append('deployment_mode', normalizeDeploymentMode(deploymentMode))
 
   const response = await fetch(`${API_BASE_URL}/steganography/extract`, {
     method: 'POST',
@@ -189,17 +235,26 @@ export async function extractSteganography(file, mediaType) {
 
   await ensureSuccessfulResponse(response, 'Steganography extract failed')
 
-  return response.json()
+  const data = await response.json()
+  const message = data.message
+
+  if (typeof message !== 'string') {
+    throw new Error('Steganography extract response does not contain message')
+  }
+
+  return data
 }
 
-// Zostawione tylko dla starego wariantu z nagłówkiem. Obecny przepływ go nie używa,
-// ponieważ /header/inject-bmp/ i /header/inject-wav/ psuły plik binarny.
+// Funkcja zostaje w API na przyszłość, ale obecny stabilny flow jej nie wywołuje.
+// Wariant z nagłówkiem/hash wymaga poprawnego backendowego /header/inject-*.
 export async function injectHeader(file, cipher, sliders, bits, deploymentMode, mediaType) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('cipher', cipher)
+  formData.append('cipher', getHeaderCipherValue(cipher))
 
-  if (mediaType === MEDIA_TYPES.BMP) {
+  if (normalizedMediaType === 'bmp') {
     formData.append('sliderR', sliders[0] || 0)
     formData.append('sliderG', sliders[1] || 0)
     formData.append('sliderB', sliders[2] || 0)
@@ -208,9 +263,9 @@ export async function injectHeader(file, cipher, sliders, bits, deploymentMode, 
   }
 
   formData.append('bits', bits)
-  formData.append('deployment_mode', deploymentMode)
+  formData.append('deployment_mode', normalizeDeploymentMode(deploymentMode))
 
-  const endpoint = mediaType === MEDIA_TYPES.BMP ? '/header/inject-bmp/' : '/header/inject-wav/'
+  const endpoint = normalizedMediaType === 'bmp' ? '/header/inject-bmp/' : '/header/inject-wav/'
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
@@ -222,12 +277,12 @@ export async function injectHeader(file, cipher, sliders, bits, deploymentMode, 
   return response.blob()
 }
 
-// Stary automatyczny dekoder oparty o nagłówek/hash. Nie używaj dla plików
-// generowanych bez injectHeader, bo zwróci hash verification failed.
+// Stary automatyczny dekoder oparty o nagłówek/hash.
+// Nie używaj dla plików generowanych bez injectHeader.
 export async function decodeFile(file, mediaType, key = '') {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('media_type', mediaType)
+  formData.append('media_type', normalizeMediaType(mediaType))
   formData.append('key', key)
 
   const response = await fetch(`${API_BASE_URL}/decoder/process`, {
