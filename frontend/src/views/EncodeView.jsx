@@ -13,7 +13,6 @@ import { UI_TEXT } from "../i18n";
 
 const inputClassName =
   "w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10";
-("w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10");
 
 export default function EncodeView() {
   const {
@@ -36,7 +35,6 @@ export default function EncodeView() {
     handleEncode,
   } = useEncoder();
 
-  const showKeyField = cipherRequiresKey(cipher);
   const showKeyField = cipherRequiresKey(cipher);
 
   return (
