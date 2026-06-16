@@ -8,17 +8,15 @@ import { useDecoder } from "../hooks/useDecoder";
 import { UI_TEXT } from "../i18n";
 
 const inputClassName =
-  "w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10";
+  "w-full rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none shadow-inner shadow-black/20 transition-all duration-300 placeholder:text-slate-600 hover:border-white/20 hover:bg-slate-900/80 focus:border-white/20 focus:bg-slate-900/90 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(15,23,42,0.35)] focus:ring-0";
 
 function ResultRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-white/10 py-3 last:border-b-0">
       <span className="text-sm text-slate-400">{label}</span>
+
       <span className="text-right text-sm font-semibold text-slate-100">
-        {value}
-      </span>
-      <span className="text-right text-sm font-semibold text-slate-100">
-        {value}
+        {value || "-"}
       </span>
     </div>
   );
@@ -39,14 +37,16 @@ export default function DecodeView() {
 
   return (
     <div className="grid gap-0 lg:grid-cols-[minmax(0,1.02fr)_minmax(320px,0.98fr)]">
-      <section className="border-b border-white/10 p-5 sm:p-7 lg:border-b-0 lg:border-r">
+      <section className="border-b border-white/10 p-5 sm:p-7 lg:border-b-0 lg:border-r lg:border-white/10">
         <div className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-200">
             {UI_TEXT.decoder.eyebrow}
           </p>
+
           <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
             {UI_TEXT.decoder.title}
           </h2>
+
           <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
             {UI_TEXT.decoder.description}
           </p>
@@ -89,6 +89,7 @@ export default function DecodeView() {
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-200">
             {UI_TEXT.decoder.results}
           </p>
+
           <h3 className="mt-2 text-xl font-black tracking-tight text-white">
             Raport dekodowania
           </h3>
@@ -104,32 +105,18 @@ export default function DecodeView() {
                     ? UI_TEXT.common.yes
                     : UI_TEXT.common.no
                 }
-                value={
-                  result.message_detected
-                    ? UI_TEXT.common.yes
-                    : UI_TEXT.common.no
-                }
               />
+
               <ResultRow
                 label={UI_TEXT.decoder.cipherUsed}
                 value={result.cipher_used}
               />
+
               <ResultRow
                 label={UI_TEXT.decoder.deploymentMode}
                 value={result.deployment_mode}
               />
-              <ResultRow
-                label={UI_TEXT.decoder.bitsExtracted}
-                value={result.bits_extracted}
-              />
-              <ResultRow
-                label={UI_TEXT.decoder.cipherUsed}
-                value={result.cipher_used}
-              />
-              <ResultRow
-                label={UI_TEXT.decoder.deploymentMode}
-                value={result.deployment_mode}
-              />
+
               <ResultRow
                 label={UI_TEXT.decoder.bitsExtracted}
                 value={result.bits_extracted}
@@ -140,12 +127,13 @@ export default function DecodeView() {
               <p className="mb-2 text-sm font-bold text-slate-200">
                 {UI_TEXT.decoder.decryptedText}
               </p>
-              <div className="min-h-32 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-50 whitespace-pre-wrap">
-                {result.decrypted_text}
+
+              <div className="min-h-32 whitespace-pre-wrap rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-50">
+                {result.decrypted_text || "-"}
               </div>
             </div>
 
-            {file && (
+            {file && mediaType === "wav" && (
               <div className="mt-5">
                 <WaveformComparison encodedFile={file} />
               </div>
