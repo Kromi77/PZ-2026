@@ -1,40 +1,44 @@
-import { useState } from 'react'
-import EncoderTab from './components/EncoderTab'
-import DecoderTab from './components/DecoderTab'
-import './App.css'
-import { UI_TEXT } from './i18n'
+import { useState } from "react";
+import TabNavigation from "./components/tabs/TabNavigation";
+import { TAB_IDS } from "./config/appConfig";
+import AppLayout from "./layout/AppLayout";
+import ContentWrapper from "./layout/ContentWrapper";
+import DecodeView from "./views/DecodeView";
+import EncodeView from "./views/EncodeView";
+
+import { UI_TEXT } from "./i18n";
+
+const TABS = [
+  {
+    id: TAB_IDS.ENCODE,
+    label: UI_TEXT.tabs.encode,
+  },
+  {
+    id: TAB_IDS.DECODE,
+    label: UI_TEXT.tabs.decode,
+  },
+];
 
 function App() {
-  const [activeTab, setActiveTab] = useState('encode')
+  const [activeTab, setActiveTab] = useState(TAB_IDS.ENCODE);
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 w-full flex flex-col font-sans">
-      <header className="bg-purple-800 text-white p-6 shadow-md w-full">
-        <h1 className="text-3xl font-bold m-0 text-center">{UI_TEXT.app.title}</h1>
-      </header>
-      
-      <main className="flex-grow p-6 w-full flex flex-col items-center">
-        <div className="flex gap-4 mb-4 w-full justify-center max-w-4xl">
-          <button 
-            className={`flex-1 py-3 font-semibold rounded-t-lg transition-colors text-lg ${activeTab === 'encode' ? 'bg-white text-purple-800 border-t-4 border-purple-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]' : 'bg-gray-200 text-gray-600 hover:bg-gray-300 border-t-4 border-transparent'}`}
-            onClick={() => setActiveTab('encode')}
-          >
-            {UI_TEXT.tabs.encode}
-          </button>
-          <button 
-            className={`flex-1 py-3 font-semibold rounded-t-lg transition-colors text-lg ${activeTab === 'decode' ? 'bg-white text-purple-800 border-t-4 border-purple-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]' : 'bg-gray-200 text-gray-600 hover:bg-gray-300 border-t-4 border-transparent'}`}
-            onClick={() => setActiveTab('decode')}
-          >
-            {UI_TEXT.tabs.decode}
-          </button>
-        </div>
+    <AppLayout
+      title={UI_TEXT.app.title}
+      subtitle={UI_TEXT.app.subtitle}
+      badge={UI_TEXT.app.badge}
+    >
+      <TabNavigation
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
-        <div className="bg-white rounded-b-lg rounded-tr-lg rounded-tl-lg shadow-lg w-full max-w-4xl overflow-hidden">
-          {activeTab === 'encode' ? <EncoderTab /> : <DecoderTab />}
-        </div>
-      </main>
-    </div>
-  )
+      <ContentWrapper>
+        {activeTab === TAB_IDS.ENCODE ? <EncodeView /> : <DecodeView />}
+      </ContentWrapper>
+    </AppLayout>
+  );
 }
 
-export default App
+export default App;
