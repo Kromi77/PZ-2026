@@ -13,6 +13,7 @@ import { UI_TEXT } from "../i18n";
 
 const inputClassName =
   "w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10";
+("w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10");
 
 export default function EncodeView() {
   const {
@@ -35,6 +36,7 @@ export default function EncodeView() {
     handleEncode,
   } = useEncoder();
 
+  const showKeyField = cipherRequiresKey(cipher);
   const showKeyField = cipherRequiresKey(cipher);
 
   return (
@@ -99,7 +101,7 @@ export default function EncodeView() {
             hint={UI_TEXT.encoder.allowedFiles}
           />
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
             <div className="mb-4">
               <h3 className="text-sm font-bold text-slate-100">
                 {mediaType === MEDIA_TYPES.BMP
@@ -138,7 +140,7 @@ export default function EncodeView() {
             )}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
             <h3 className="mb-3 text-sm font-bold text-slate-100">
               {UI_TEXT.encoder.deploymentMode}
             </h3>
@@ -149,6 +151,8 @@ export default function EncodeView() {
                   deploymentMode === DEPLOYMENT_MODES.CONTINUOUS
                     ? "border-violet-300/60 bg-violet-300/10 text-violet-50"
                     : "border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20"
+                      ? "border-violet-300/60 bg-violet-300/10 text-violet-50"
+                      : "border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20"
                 }`}
               >
                 <input
@@ -158,8 +162,14 @@ export default function EncodeView() {
                   onChange={() =>
                     setDeploymentMode(DEPLOYMENT_MODES.CONTINUOUS)
                   }
+                  onChange={() =>
+                    setDeploymentMode(DEPLOYMENT_MODES.CONTINUOUS)
+                  }
                   className="sr-only"
                 />
+                <span className="text-sm font-semibold">
+                  {UI_TEXT.encoder.continuous}
+                </span>
                 <span className="text-sm font-semibold">
                   {UI_TEXT.encoder.continuous}
                 </span>
@@ -170,6 +180,8 @@ export default function EncodeView() {
                   deploymentMode === DEPLOYMENT_MODES.UNIFORM
                     ? "border-violet-300/60 bg-violet-300/10 text-violet-50"
                     : "border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20"
+                      ? "border-violet-300/60 bg-violet-300/10 text-violet-50"
+                      : "border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20"
                 }`}
               >
                 <input
@@ -179,6 +191,9 @@ export default function EncodeView() {
                   onChange={() => setDeploymentMode(DEPLOYMENT_MODES.UNIFORM)}
                   className="sr-only"
                 />
+                <span className="text-sm font-semibold">
+                  {UI_TEXT.encoder.uniform}
+                </span>
                 <span className="text-sm font-semibold">
                   {UI_TEXT.encoder.uniform}
                 </span>

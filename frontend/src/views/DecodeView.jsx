@@ -9,11 +9,15 @@ import { UI_TEXT } from "../i18n";
 
 const inputClassName =
   "w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10";
+("w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10");
 
 function ResultRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-white/10 py-3 last:border-b-0">
       <span className="text-sm text-slate-400">{label}</span>
+      <span className="text-right text-sm font-semibold text-slate-100">
+        {value}
+      </span>
       <span className="text-right text-sm font-semibold text-slate-100">
         {value}
       </span>
@@ -93,7 +97,7 @@ export default function DecodeView() {
 
         {result ? (
           <div className="rounded-3xl border border-white/10 bg-slate-950/55 p-5 shadow-inner shadow-black/20">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4">
+            <div className="rounded-2xl border border-white/10 bg-white/3 px-4">
               <ResultRow
                 label={UI_TEXT.decoder.messageDetected}
                 value={
@@ -101,6 +105,23 @@ export default function DecodeView() {
                     ? UI_TEXT.common.yes
                     : UI_TEXT.common.no
                 }
+                value={
+                  result.message_detected
+                    ? UI_TEXT.common.yes
+                    : UI_TEXT.common.no
+                }
+              />
+              <ResultRow
+                label={UI_TEXT.decoder.cipherUsed}
+                value={result.cipher_used}
+              />
+              <ResultRow
+                label={UI_TEXT.decoder.deploymentMode}
+                value={result.deployment_mode}
+              />
+              <ResultRow
+                label={UI_TEXT.decoder.bitsExtracted}
+                value={result.bits_extracted}
               />
               <ResultRow
                 label={UI_TEXT.decoder.cipherUsed}

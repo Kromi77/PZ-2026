@@ -21,12 +21,12 @@ export default function Header({ title, subtitle, badge }) {
             )}
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-300 shadow-xl shadow-black/20">
-            <span className="text-slate-500">Tryb:</span>{' '}
+          <div className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-sm text-slate-300 shadow-xl shadow-black/20">
+            <span className="text-slate-500">Tryb:</span>{" "}
             <span className="font-semibold text-emerald-200">BMP / WAV</span>
           </div>
         </div>
       </div>
     </header>
-  )
+  );
 }
