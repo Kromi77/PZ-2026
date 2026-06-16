@@ -32,7 +32,7 @@ async def hide_message(
     file: UploadFile = File(...),
     encrypted_message: str = Form(...),
     media_type: str = Form(...),
-    deployment_mode: int = Form(0)
+    deployment_mode: int = Form(0),
 ):
     """
     Ukrywa zaszyfrowaną wiadomość w pliku multimedialnym (BMP lub WAV).
@@ -66,7 +66,16 @@ async def hide_message(
                 detail="Plik jest pusty"
             )
         
-        is_uniform = int(deployment_mode) == 1
+        if deployment_mode not in (0, 1):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Nieobsługiwany tryb rozmieszczenia: {deployment_mode}. "
+                    "Dozwolone: 0 (ciągłe), 1 (równomierne)"
+                ),
+            )
+
+        is_uniform = deployment_mode == 1
 
         # Ukryj wiadomość w zależności od typu pliku
         if media_type.lower() == "bmp":
@@ -97,6 +106,8 @@ async def hide_message(
             headers={"Content-Disposition": f"attachment; filename={output_filename}"}
         )
         
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

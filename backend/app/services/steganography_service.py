@@ -6,8 +6,6 @@ lub próbek dźwięku (WAV).
 """
 
 import struct
-import io
-from typing import Tuple, Optional
 
 
 class LSBSteganography:
@@ -67,12 +65,12 @@ class LSBSteganography:
         except UnicodeDecodeError:
             # Fallback na latin-1 jeśli UTF-8 nie działa
             return text_bytes.decode('latin-1', errors='replace')
-    
+
     @staticmethod
     def calculate_message_bits(message: str) -> int:
         """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości (prefiks 32-bit + dane)."""
         return len(LSBSteganography.text_to_binary(message))
-
+    
     @staticmethod
     def hide_in_bmp(bmp_data: bytes, secret_message: str, uniform: bool = False) -> bytes:
         """
@@ -93,14 +91,19 @@ class LSBSteganography:
         """
         # Odczytaj offset danych pikseli z nagłówka BMP (bajty 10-13)
         pixel_offset = struct.unpack('<I', bmp_data[10:14])[0]
+
+        header = bmp_data[:pixel_offset]
+        pixel_data = bytearray(bmp_data[pixel_offset:])
         
         header = bmp_data[:pixel_offset]
         pixel_data = bytearray(bmp_data[pixel_offset:])
 
         secret_bits = LSBSteganography.text_to_binary(secret_message)
+        
         n_bits = len(secret_bits)
         n_carrier = len(pixel_data)
 
+        # Sprawdź czy jest wystarczająco miejsca
         if n_bits > n_carrier:
             raise ValueError(
                 f"Wiadomość zbyt długa. Maksimum bitów: {n_carrier}, "
@@ -114,9 +117,10 @@ class LSBSteganography:
                 pos = int(i * step)
                 pixel_data[pos] = (pixel_data[pos] & 0xFE) | int(bit)
         else:
+            # Ukryj bity w LSB pikseli (tryb ciągły)
             for i, bit in enumerate(secret_bits):
                 pixel_data[i] = (pixel_data[i] & 0xFE) | int(bit)
-
+        
         return header + bytes(pixel_data)
 
     @staticmethod
@@ -153,8 +157,10 @@ class LSBSteganography:
                 str(pixel_data[int(i * step)] & 1) for i in range(total_bits)
             )
         else:
-            secret_bits = ''.join(str(b & 1) for b in pixel_data)
-
+            # Ekstrakcja bitów ciągła
+            secret_bits = ''.join(str(byte_val & 1) for byte_val in pixel_data)
+        
+        # Konwertuj bity na tekst (binary_to_text sam obsługuje separator)
         return LSBSteganography.binary_to_text(secret_bits)
     
     @staticmethod
@@ -175,6 +181,8 @@ class LSBSteganography:
         Returns:
             Zmodyfikowana zawartość WAV z ukrytą wiadomością
         """
+        # Znajdź gdzie zaczynają się dane dźwiękowe (zwykle byte 44)
+        # Szukamy znacznika 'data'
         data_chunk_pos = wav_data.find(b'data')
         if data_chunk_pos == -1:
             raise ValueError("Nie znaleziono sekcji 'data' w pliku WAV")
@@ -186,9 +194,11 @@ class LSBSteganography:
         audio_data = bytearray(wav_data[audio_data_start:audio_data_start + data_size])
 
         secret_bits = LSBSteganography.text_to_binary(secret_message)
+        
         n_bits = len(secret_bits)
         n_carrier = len(audio_data)
 
+        # Sprawdź czy jest wystarczająco miejsca
         if n_bits > n_carrier:
             raise ValueError(
                 f"Wiadomość zbyt długa. Maksimum bitów: {n_carrier}, "
@@ -202,9 +212,11 @@ class LSBSteganography:
                 pos = int(i * step)
                 audio_data[pos] = (audio_data[pos] & 0xFE) | int(bit)
         else:
+            # Ukryj bity w LSB próbek dźwięku (tryb ciągły)
             for i, bit in enumerate(secret_bits):
                 audio_data[i] = (audio_data[i] & 0xFE) | int(bit)
-
+        
+        # Rekonstruuj plik WAV
         result = bytearray(wav_data)
         result[audio_data_start:audio_data_start + data_size] = audio_data
         return bytes(result)
@@ -239,7 +251,7 @@ class LSBSteganography:
 
         audio_data_start = data_chunk_pos + 8
         audio_data = wav_data[audio_data_start:audio_data_start + data_size]
-
+        
         if uniform and total_bits:
             # Odczyt z tych samych pozycji co przy ukrywaniu
             step = len(audio_data) / total_bits
@@ -247,44 +259,58 @@ class LSBSteganography:
                 str(audio_data[int(i * step)] & 1) for i in range(total_bits)
             )
         else:
-            secret_bits = ''.join(str(b & 1) for b in audio_data)
-
+            # Ekstrakcja bitów ciągła
+            secret_bits = ''.join(str(byte_val & 1) for byte_val in audio_data)
+        
+        # Konwertuj bity na tekst (binary_to_text sam obsługuje separator)
         return LSBSteganography.binary_to_text(secret_bits)
 
 
 # Funkcje do użytku w routerze
 def hide_message_in_bmp(
-    bmp_file_content: bytes, encrypted_message: str, uniform: bool = False
+    bmp_file_content: bytes,
+    encrypted_message: str,
+    uniform: bool = False,
 ) -> bytes:
     """Wrapper - ukrywa wiadomość w BMP (tryb ciągły lub równomierny)."""
     return LSBSteganography.hide_in_bmp(bmp_file_content, encrypted_message, uniform)
 
 
 def extract_message_from_bmp(
-    bmp_file_content: bytes, uniform: bool = False, total_bits: int = None
+    bmp_file_content: bytes,
+    uniform: bool = False,
+    total_bits: int = None,
 ) -> str:
     """Wrapper - ekstraktuje wiadomość z BMP (tryb ciągły lub równomierny)."""
     return LSBSteganography.extract_from_bmp(
-        bmp_file_content, uniform=uniform, total_bits=total_bits
+        bmp_file_content,
+        uniform=uniform,
+        total_bits=total_bits,
     )
 
 
 def calculate_message_bits(message: str) -> int:
-    """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości — do zapisu w nagłówku BMPHeader.bits."""
+    """Zwraca liczbę bitów potrzebnych do ukrycia wiadomości — do zapisu w nagłówku."""
     return LSBSteganography.calculate_message_bits(message)
 
 
 def hide_message_in_wav(
-    wav_file_content: bytes, encrypted_message: str, uniform: bool = False
+    wav_file_content: bytes,
+    encrypted_message: str,
+    uniform: bool = False,
 ) -> bytes:
     """Wrapper - ukrywa wiadomość w WAV (tryb ciągły lub równomierny)."""
     return LSBSteganography.hide_in_wav(wav_file_content, encrypted_message, uniform)
 
 
 def extract_message_from_wav(
-    wav_file_content: bytes, uniform: bool = False, total_bits: int = None
+    wav_file_content: bytes,
+    uniform: bool = False,
+    total_bits: int = None,
 ) -> str:
     """Wrapper - ekstraktuje wiadomość z WAV (tryb ciągły lub równomierny)."""
     return LSBSteganography.extract_from_wav(
-        wav_file_content, uniform=uniform, total_bits=total_bits
+        wav_file_content,
+        uniform=uniform,
+        total_bits=total_bits,
     )
