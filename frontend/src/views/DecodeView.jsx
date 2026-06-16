@@ -4,6 +4,7 @@ import FileDropzone from "../components/common/FileDropzone";
 import FormField from "../components/common/FormField";
 import MediaPreview from "../components/common/MediaPreview";
 import WaveformComparison from "../components/WaveformComparison";
+import { CIPHER_OPTIONS, cipherRequiresKey } from "../config/ciphers";
 import { useDecoder } from "../hooks/useDecoder";
 import { UI_TEXT } from "../i18n";
 
@@ -27,6 +28,8 @@ export default function DecodeView() {
     file,
     mediaType,
     handleFileChange,
+    cipher,
+    handleCipherChange,
     key,
     setKey,
     loading,
@@ -34,6 +37,8 @@ export default function DecodeView() {
     result,
     handleDecode,
   } = useDecoder();
+
+  const showKeyField = cipherRequiresKey(cipher);
 
   return (
     <div className="grid gap-0 lg:grid-cols-[minmax(0,1.02fr)_minmax(320px,0.98fr)]">
@@ -62,15 +67,36 @@ export default function DecodeView() {
             hint={UI_TEXT.decoder.allowedFiles}
           />
 
-          <FormField label={UI_TEXT.decoder.key} hint={UI_TEXT.decoder.keyHint}>
-            <input
-              type="text"
-              value={key}
-              onChange={(event) => setKey(event.target.value)}
-              placeholder={UI_TEXT.decoder.keyPlaceholder}
-              className={inputClassName}
-            />
-          </FormField>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Szyfr użyty przy kodowaniu">
+              <select
+                className={inputClassName}
+                value={cipher}
+                onChange={(event) => handleCipherChange(event.target.value)}
+              >
+                {CIPHER_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            {showKeyField && (
+              <FormField
+                label={UI_TEXT.decoder.key}
+                hint={UI_TEXT.decoder.keyHint}
+              >
+                <input
+                  type="text"
+                  value={key}
+                  onChange={(event) => setKey(event.target.value)}
+                  placeholder={UI_TEXT.decoder.keyPlaceholder}
+                  className={inputClassName}
+                />
+              </FormField>
+            )}
+          </div>
 
           <Button onClick={handleDecode} disabled={loading} className="w-full">
             {loading ? UI_TEXT.decoder.decoding : UI_TEXT.decoder.decodeButton}
@@ -121,6 +147,16 @@ export default function DecodeView() {
                 label={UI_TEXT.decoder.bitsExtracted}
                 value={result.bits_extracted}
               />
+            </div>
+
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-bold text-slate-200">
+                Zaszyfrowany tekst wyciągnięty z pliku
+              </p>
+
+              <div className="min-h-20 whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-100">
+                {result.encrypted_text || "-"}
+              </div>
             </div>
 
             <div className="mt-5">

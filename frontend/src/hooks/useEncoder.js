@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { CIPHER_TYPES, getDefaultKeyForCipher } from '../config/ciphers'
-import { DEPLOYMENT_MODES } from '../config/appConfig'
-import { encryptText, hideSteganography, injectHeader } from '../api/steganographyApi'
+import { encryptText, hideSteganography } from '../api/steganographyApi'
 import { validateCipherKey } from '../utils/validateCipherKey'
 import { useMediaFile } from './useMediaFile'
 import { UI_TEXT } from '../i18n'
@@ -10,8 +9,6 @@ export function useEncoder() {
   const [text, setText] = useState('')
   const [cipher, setCipher] = useState(CIPHER_TYPES.CEZAR)
   const [key, setKey] = useState(getDefaultKeyForCipher(CIPHER_TYPES.CEZAR))
-  const [sliders, setSliders] = useState([0, 0, 0])
-  const [deploymentMode, setDeploymentMode] = useState(DEPLOYMENT_MODES.CONTINUOUS)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resultFile, setResultFile] = useState(null)
@@ -27,16 +24,6 @@ export function useEncoder() {
     setCipher(nextCipher)
     setKey(getDefaultKeyForCipher(nextCipher))
     setError('')
-  }
-
-  function handleSliderChange(index, value) {
-    const parsedValue = parseInt(value, 10)
-
-    setSliders((currentSliders) => {
-      const nextSliders = [...currentSliders]
-      nextSliders[index] = Number.isNaN(parsedValue) ? 0 : parsedValue
-      return nextSliders
-    })
   }
 
   async function handleEncode() {
@@ -63,23 +50,9 @@ export function useEncoder() {
 
     try {
       const encryptedText = await encryptText(cipher, text, key)
-      const bits = new Blob([encryptedText]).size * 8 + 32
-
       const modifiedMediaBlob = await hideSteganography(file, encryptedText, mediaType)
-      const modifiedMediaFile = new File([modifiedMediaBlob], file.name, {
-        type: file.type,
-      })
 
-      const finalBlob = await injectHeader(
-        modifiedMediaFile,
-        cipher,
-        sliders,
-        bits,
-        deploymentMode,
-        mediaType,
-      )
-
-      const finalFile = new File([finalBlob], `encoded_${file.name}`, {
+      const finalFile = new File([modifiedMediaBlob], `encoded_${file.name}`, {
         type: file.type,
       })
 
@@ -101,10 +74,6 @@ export function useEncoder() {
     file,
     mediaType,
     handleFileChange,
-    sliders,
-    handleSliderChange,
-    deploymentMode,
-    setDeploymentMode,
     loading,
     error,
     resultFile,

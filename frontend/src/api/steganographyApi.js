@@ -16,6 +16,16 @@ async function ensureSuccessfulResponse(response, fallbackMessage) {
   }
 }
 
+function getResponseOutput(data, fallbackMessage) {
+  const output = data.output ?? data.result ?? data.text ?? data.message ?? data.decrypted_text
+
+  if (typeof output !== 'string') {
+    throw new Error(fallbackMessage)
+  }
+
+  return output
+}
+
 function buildEncryptionPayload(cipher, text, key) {
   const body = { text }
 
@@ -67,6 +77,60 @@ function buildEncryptionPayload(cipher, text, key) {
   }
 }
 
+function buildDecryptionPayload(cipher, text, key) {
+  const body = { text }
+
+  switch (cipher) {
+    case CIPHER_TYPES.CEZAR:
+      return {
+        endpoint: '/caesar/decrypt',
+        body: { ...body, shift: parseInt(key, 10) },
+      }
+
+    case CIPHER_TYPES.VIGENERE:
+      return {
+        endpoint: '/vinegre/decrypt',
+        body: { ...body, key: String(key) },
+      }
+
+    case CIPHER_TYPES.XOR:
+      // XOR jest symetryczny, więc ten sam endpoint może działać jako szyfrowanie i deszyfrowanie.
+      return {
+        endpoint: '/encrypt/xor',
+        body: { ...body, key: String(key) },
+      }
+
+    case CIPHER_TYPES.ATBASH:
+      // Atbash jest symetryczny.
+      return {
+        endpoint: '/atbash/encrypt',
+        body,
+      }
+
+    case CIPHER_TYPES.ROT13:
+      // ROT13 jest symetryczny.
+      return {
+        endpoint: '/rot13/process',
+        body,
+      }
+
+    case CIPHER_TYPES.RAIL_FENCE:
+      return {
+        endpoint: '/railfence/decrypt',
+        body: { ...body, rails: parseInt(key, 10) },
+      }
+
+    case CIPHER_TYPES.COLUMNAR:
+      return {
+        endpoint: '/columnar/decrypt',
+        body: { ...body, key: String(key) },
+      }
+
+    default:
+      throw new Error(`Unsupported cipher: ${cipher}`)
+  }
+}
+
 export async function encryptText(cipher, text, key) {
   const { endpoint, body } = buildEncryptionPayload(cipher, text, key)
 
@@ -79,7 +143,22 @@ export async function encryptText(cipher, text, key) {
   await ensureSuccessfulResponse(response, 'Encryption failed')
 
   const data = await response.json()
-  return data.output
+  return getResponseOutput(data, 'Encryption response does not contain output')
+}
+
+export async function decryptText(cipher, text, key) {
+  const { endpoint, body } = buildDecryptionPayload(cipher, text, key)
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  await ensureSuccessfulResponse(response, 'Decryption failed')
+
+  const data = await response.json()
+  return getResponseOutput(data, 'Decryption response does not contain output')
 }
 
 export async function hideSteganography(file, encryptedMessage, mediaType) {
@@ -98,6 +177,23 @@ export async function hideSteganography(file, encryptedMessage, mediaType) {
   return response.blob()
 }
 
+export async function extractSteganography(file, mediaType) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('media_type', mediaType)
+
+  const response = await fetch(`${API_BASE_URL}/steganography/extract`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  await ensureSuccessfulResponse(response, 'Steganography extract failed')
+
+  return response.json()
+}
+
+// Zostawione tylko dla starego wariantu z nagłówkiem. Obecny przepływ go nie używa,
+// ponieważ /header/inject-bmp/ i /header/inject-wav/ psuły plik binarny.
 export async function injectHeader(file, cipher, sliders, bits, deploymentMode, mediaType) {
   const formData = new FormData()
   formData.append('file', file)
@@ -126,6 +222,8 @@ export async function injectHeader(file, cipher, sliders, bits, deploymentMode, 
   return response.blob()
 }
 
+// Stary automatyczny dekoder oparty o nagłówek/hash. Nie używaj dla plików
+// generowanych bez injectHeader, bo zwróci hash verification failed.
 export async function decodeFile(file, mediaType, key = '') {
   const formData = new FormData()
   formData.append('file', file)
