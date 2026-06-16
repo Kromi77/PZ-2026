@@ -31,7 +31,8 @@ async def get_steganography_info():
 async def hide_message(
     file: UploadFile = File(...),
     encrypted_message: str = Form(...),
-    media_type: str = Form(...)
+    media_type: str = Form(...),
+    deployment_mode: int = Form(0)
 ):
     """
     Ukrywa zaszyfrowaną wiadomość w pliku multimedialnym (BMP lub WAV).
@@ -65,12 +66,22 @@ async def hide_message(
                 detail="Plik jest pusty"
             )
         
+        is_uniform = int(deployment_mode) == 1
+
         # Ukryj wiadomość w zależności od typu pliku
         if media_type.lower() == "bmp":
-            result_content = service.hide_message_in_bmp(file_content, encrypted_message)
+            result_content = service.hide_message_in_bmp(
+                file_content,
+                encrypted_message,
+                uniform=is_uniform,
+            )
             output_filename = "steganography_output.bmp"
         else:  # wav
-            result_content = service.hide_message_in_wav(file_content, encrypted_message)
+            result_content = service.hide_message_in_wav(
+                file_content,
+                encrypted_message,
+                uniform=is_uniform,
+            )
             output_filename = "steganography_output.wav"
         
         # Zapisz wynik do pliku tymczasowego
