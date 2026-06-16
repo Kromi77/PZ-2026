@@ -91,9 +91,11 @@ class LSBSteganography:
         Returns:
             Zmodyfikowana zawartość BMP z ukrytą wiadomością
         """
-        # BMP header ma 54 bajty, dane pikseli zaczynają się od bajtu 54
-        header = bmp_data[:54]
-        pixel_data = bytearray(bmp_data[54:])
+        # Odczytaj offset danych pikseli z nagłówka BMP (bajty 10-13)
+        pixel_offset = struct.unpack('<I', bmp_data[10:14])[0]
+        
+        header = bmp_data[:pixel_offset]
+        pixel_data = bytearray(bmp_data[pixel_offset:])
 
         secret_bits = LSBSteganography.text_to_binary(secret_message)
         n_bits = len(secret_bits)
@@ -140,7 +142,9 @@ class LSBSteganography:
         Returns:
             Wyekstraktowana zaszyfrowana wiadomość
         """
-        pixel_data = bmp_data[54:]
+        # Odczytaj offset danych pikseli z nagłówka BMP (bajty 10-13)
+        pixel_offset = struct.unpack('<I', bmp_data[10:14])[0]
+        pixel_data = bmp_data[pixel_offset:]
 
         if uniform and total_bits:
             # Odczyt z tych samych pozycji co przy ukrywaniu
