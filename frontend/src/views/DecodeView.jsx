@@ -1,21 +1,24 @@
-import Alert from '../components/common/Alert'
-import Button from '../components/common/Button'
-import FileDropzone from '../components/common/FileDropzone'
-import FormField from '../components/common/FormField'
-import MediaPreview from '../components/common/MediaPreview'
-import { useDecoder } from '../hooks/useDecoder'
-import { UI_TEXT } from '../i18n'
+import Alert from "../components/common/Alert";
+import Button from "../components/common/Button";
+import FileDropzone from "../components/common/FileDropzone";
+import FormField from "../components/common/FormField";
+import MediaPreview from "../components/common/MediaPreview";
+import WaveformComparison from "../components/WaveformComparison";
+import { useDecoder } from "../hooks/useDecoder";
+import { UI_TEXT } from "../i18n";
 
 const inputClassName =
-  'w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10'
+  "w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-violet-300/60 focus:ring-4 focus:ring-violet-400/10";
 
 function ResultRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-white/10 py-3 last:border-b-0">
       <span className="text-sm text-slate-400">{label}</span>
-      <span className="text-right text-sm font-semibold text-slate-100">{value}</span>
+      <span className="text-right text-sm font-semibold text-slate-100">
+        {value}
+      </span>
     </div>
-  )
+  );
 }
 
 export default function DecodeView() {
@@ -29,7 +32,7 @@ export default function DecodeView() {
     error,
     result,
     handleDecode,
-  } = useDecoder()
+  } = useDecoder();
 
   return (
     <div className="grid gap-0 lg:grid-cols-[minmax(0,1.02fr)_minmax(320px,0.98fr)]">
@@ -93,11 +96,24 @@ export default function DecodeView() {
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4">
               <ResultRow
                 label={UI_TEXT.decoder.messageDetected}
-                value={result.message_detected ? UI_TEXT.common.yes : UI_TEXT.common.no}
+                value={
+                  result.message_detected
+                    ? UI_TEXT.common.yes
+                    : UI_TEXT.common.no
+                }
               />
-              <ResultRow label={UI_TEXT.decoder.cipherUsed} value={result.cipher_used} />
-              <ResultRow label={UI_TEXT.decoder.deploymentMode} value={result.deployment_mode} />
-              <ResultRow label={UI_TEXT.decoder.bitsExtracted} value={result.bits_extracted} />
+              <ResultRow
+                label={UI_TEXT.decoder.cipherUsed}
+                value={result.cipher_used}
+              />
+              <ResultRow
+                label={UI_TEXT.decoder.deploymentMode}
+                value={result.deployment_mode}
+              />
+              <ResultRow
+                label={UI_TEXT.decoder.bitsExtracted}
+                value={result.bits_extracted}
+              />
             </div>
 
             <div className="mt-5">
@@ -108,6 +124,12 @@ export default function DecodeView() {
                 {result.decrypted_text}
               </div>
             </div>
+
+            {file && (
+              <div className="mt-5">
+                <WaveformComparison encodedFile={file} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex min-h-80 items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/45 p-8 text-center text-sm leading-6 text-slate-500">
@@ -116,5 +138,5 @@ export default function DecodeView() {
         )}
       </aside>
     </div>
-  )
+  );
 }
