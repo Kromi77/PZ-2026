@@ -122,11 +122,7 @@ function parseWavManually(arrayBuffer) {
 
   const samples = [];
 
-  for (
-    let offset = dataStart;
-    offset + frameSize <= dataEnd;
-    offset += frameSize
-  ) {
+  for (let offset = dataStart; offset + frameSize <= dataEnd; offset += frameSize) {
     let sample = 0;
 
     if (audioFormat === 1 && bitsPerSample === 8) {
@@ -137,7 +133,6 @@ function parseWavManually(arrayBuffer) {
       const b0 = view.getUint8(offset);
       const b1 = view.getUint8(offset + 1);
       const b2 = view.getUint8(offset + 2);
-
       let value = b0 | (b1 << 8) | (b2 << 16);
 
       if (value & 0x800000) {
@@ -171,11 +166,8 @@ async function decodeWithAudioContext(arrayBuffer) {
   const audioContext = new AudioContextClass();
 
   try {
-    const audioBuffer = await audioContext.decodeAudioData(
-      arrayBuffer.slice(0),
-    );
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
     const rawData = audioBuffer.getChannelData(0);
-
     return downsample(rawData);
   } finally {
     if (typeof audioContext.close === "function") {

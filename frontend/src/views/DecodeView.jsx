@@ -6,7 +6,7 @@ import MediaPreview from "../components/common/MediaPreview";
 import SliderControl from "../components/common/SliderControl";
 import WaveformComparison from "../components/WaveformComparison";
 import { DEPLOYMENT_MODES, MEDIA_TYPES } from "../config/appConfig";
-import { CIPHER_OPTIONS, cipherRequiresKey } from "../config/ciphers";
+import { CIPHER_OPTIONS } from "../config/ciphers";
 import { useDecoder } from "../hooks/useDecoder";
 import { UI_TEXT } from "../i18n";
 
@@ -60,13 +60,12 @@ export default function DecodeView() {
     handleSliderChange,
     deploymentMode,
     handleDeploymentModeChange,
+    detectedHeader,
     loading,
     error,
     result,
     handleDecode,
   } = useDecoder();
-
-  const showKeyField = cipherRequiresKey(cipher);
 
   return (
     <div className="grid gap-0 lg:grid-cols-[minmax(0,1.02fr)_minmax(320px,0.98fr)]">
@@ -95,6 +94,18 @@ export default function DecodeView() {
             hint={UI_TEXT.decoder.allowedFiles}
           />
 
+          {detectedHeader && (
+            <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-xs leading-6 text-emerald-50">
+              Wykryto nagłówek pliku: szyfr <strong>{detectedHeader.cipher}</strong>, tryb{" "}
+              <strong>
+                {Number(detectedHeader.deployment_mode) === DEPLOYMENT_MODES.UNIFORM
+                  ? "Równomierne"
+                  : "Ciągłe"}
+              </strong>
+              , bity <strong>{detectedHeader.bits}</strong>.
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Szyfr użyty przy kodowaniu">
               <select
@@ -110,17 +121,15 @@ export default function DecodeView() {
               </select>
             </FormField>
 
-            {showKeyField && (
-              <FormField label="Klucz użyty przy kodowaniu">
-                <input
-                  type="text"
-                  value={key}
-                  onChange={(event) => setKey(event.target.value)}
-                  placeholder="Wpisz ten sam klucz, którego użyto przy kodowaniu"
-                  className={inputClassName}
-                />
-              </FormField>
-            )}
+            <FormField label="Klucz użyty przy kodowaniu">
+              <input
+                type="text"
+                value={key}
+                onChange={(event) => setKey(event.target.value)}
+                placeholder="Dla Atbash i ROT13 można zostawić puste"
+                className={inputClassName}
+              />
+            </FormField>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
@@ -132,9 +141,7 @@ export default function DecodeView() {
               </h3>
 
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Podaj te same suwaki, których użyto przy kodowaniu. Standardowy
-                dekoder czyta je z nagłówka, a wartości poniżej są używane jako
-                awaryjny fallback.
+                Po wczytaniu pliku aplikacja próbuje odczytać suwaki z nagłówka. Wartości poniżej są używane także jako fallback, jeśli standardowy dekoder nie odczyta wiadomości.
               </p>
             </div>
 
@@ -248,7 +255,7 @@ export default function DecodeView() {
                   Zaszyfrowany tekst wyciągnięty z pliku
                 </p>
 
-                <div className="max-h-40 min-h-20 overflow-y-auto overscroll-contain wrap-break-word whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/5 p-4 pr-3 text-sm leading-6 text-slate-100">
+                <div className="max-h-40 min-h-20 overflow-y-auto overscroll-contain break-words whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/5 p-4 pr-3 text-sm leading-6 text-slate-100">
                   {result.encrypted_text}
                 </div>
               </div>
@@ -259,7 +266,7 @@ export default function DecodeView() {
                 {UI_TEXT.decoder.decryptedText}
               </p>
 
-              <div className="min-h-64 max-h-130 overflow-y-auto overscroll-contain wrap-break-word whitespace-pre-wrap rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 pr-3 text-sm leading-6 text-emerald-50">
+              <div className="min-h-64 max-h-[520px] overflow-y-auto overscroll-contain break-words whitespace-pre-wrap rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 pr-3 text-sm leading-6 text-emerald-50">
                 {result.decrypted_text || "-"}
               </div>
             </div>

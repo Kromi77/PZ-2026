@@ -60,7 +60,6 @@ function stripAdhrChunkFromWavBuffer(arrayBuffer) {
 
   const restoredView = new DataView(restored.buffer);
   const originalRiffSize = view.getUint32(4, true);
-
   restoredView.setUint32(4, originalRiffSize - chunkTotalSize, true);
 
   return restored.buffer;
@@ -131,9 +130,7 @@ export default function MediaPreview({ file, label, mediaType }) {
     return URL.createObjectURL(previewFile);
   }, [previewFile]);
 
-  const { waveformData, isLoading, error } = useWaveform(
-    isWav ? previewFile : null,
-  );
+  const { waveformData, isLoading, error } = useWaveform(isWav ? previewFile : null);
 
   useEffect(() => {
     return () => {

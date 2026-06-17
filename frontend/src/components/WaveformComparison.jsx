@@ -83,17 +83,9 @@ export default function WaveformComparison({ originalFile, encodedFile }) {
 
   return (
     <div className="mt-6 w-full space-y-4">
-      <h3 className="text-lg font-semibold text-white">
-        Porównanie Oscylogramów
-      </h3>
+      <h3 className="text-lg font-semibold text-white">Porównanie Oscylogramów</h3>
 
-      <div
-        className={
-          hasBothFiles
-            ? "grid grid-cols-1 gap-4 lg:grid-cols-2"
-            : "grid grid-cols-1 gap-4"
-        }
-      >
+      <div className={hasBothFiles ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "grid grid-cols-1 gap-4"}>
         {originalFile && (
           <WaveformCard
             title="Przed kodowaniem"
@@ -136,8 +128,7 @@ export default function WaveformComparison({ originalFile, encodedFile }) {
       {originalFile && encodedFile && (
         <div className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
           <p className="text-center text-xs text-slate-500">
-            💡 Oscylogramy powinny wyglądać prawie identycznie - steganografia
-            LSB zmienia tylko najmniej znaczące bity
+            💡 Oscylogramy powinny wyglądać prawie identycznie - steganografia LSB zmienia tylko najmniej znaczące bity
           </p>
         </div>
       )}

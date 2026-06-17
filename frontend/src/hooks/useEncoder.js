@@ -6,10 +6,6 @@ import { validateCipherKey } from '../utils/validateCipherKey'
 import { useMediaFile } from './useMediaFile'
 import { UI_TEXT } from '../i18n'
 
-function calculateMessageBits(message) {
-  return new TextEncoder().encode(message).length * 8 + 32
-}
-
 export function useEncoder() {
   const [text, setText] = useState('')
   const [cipher, setCipher] = useState(CIPHER_TYPES.CEZAR)
@@ -66,28 +62,8 @@ export function useEncoder() {
     setResultFile(null)
 
     try {
-      console.groupCollapsed('[ENCODE flow] dane wejściowe')
-      console.log({
-        file: {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-        },
-        mediaType,
-        cipher,
-        key,
-        sliders,
-        deploymentMode,
-        text,
-      })
-      console.groupEnd()
-
       const encryptedText = await encryptText(cipher, text, key)
-      const bits = calculateMessageBits(encryptedText)
-
-      console.groupCollapsed('[ENCODE flow] po szyfrowaniu')
-      console.log({ encryptedText, bits })
-      console.groupEnd()
+      const bits = new TextEncoder().encode(encryptedText).length * 8 + 32
 
       const stegoBlob = await hideSteganography(
         file,
@@ -99,6 +75,7 @@ export function useEncoder() {
 
       const stegoFile = new File([stegoBlob], file.name, {
         type: file.type,
+        lastModified: file.lastModified,
       })
 
       const finalBlob = await injectHeader(
@@ -113,16 +90,6 @@ export function useEncoder() {
       const finalFile = new File([finalBlob], `encoded_${file.name}`, {
         type: file.type,
       })
-
-      console.groupCollapsed('[ENCODE flow] wynik końcowy')
-      console.log({
-        resultFile: {
-          name: finalFile.name,
-          type: finalFile.type,
-          size: finalFile.size,
-        },
-      })
-      console.groupEnd()
 
       setResultFile(finalFile)
     } catch (err) {

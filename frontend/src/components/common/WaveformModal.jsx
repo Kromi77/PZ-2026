@@ -44,10 +44,7 @@ export default function WaveformModal({
   const modal = (
     <div
       className="fixed inset-0 z-[999999] flex items-center justify-center overflow-hidden bg-black/80 p-4 backdrop-blur-sm"
-      style={{
-        width: "100vw",
-        height: "100dvh",
-      }}
+      style={{ width: "100vw", height: "100dvh" }}
       onMouseDown={handleBackdropMouseDown}
       role="dialog"
       aria-modal="true"
@@ -82,9 +79,7 @@ export default function WaveformModal({
           </button>
         </div>
 
-        <div
-          className={`min-h-0 flex-1 overflow-auto px-5 py-5 sm:px-6 ${bodyClassName}`}
-        >
+        <div className={`min-h-0 flex-1 overflow-auto px-5 py-5 sm:px-6 ${bodyClassName}`}>
           {children}
         </div>
       </div>

@@ -2,6 +2,7 @@ import { API_BASE_URL, MEDIA_TYPES } from '../config/appConfig'
 import { CIPHER_TYPES } from '../config/ciphers'
 
 const DEBUG_API = true
+const FINAL_FRONT_VERSION = 'final-no-decoder-process-v3'
 
 function describeFile(file) {
   if (!file) return null
@@ -16,16 +17,14 @@ function describeFile(file) {
 
 function logApiRequest(endpoint, payload) {
   if (!DEBUG_API) return
-
-  console.groupCollapsed(`[API request] ${endpoint}`)
+  console.groupCollapsed(`[API request][${FINAL_FRONT_VERSION}] ${endpoint}`)
   console.log(payload)
   console.groupEnd()
 }
 
 function logApiResponse(endpoint, payload) {
   if (!DEBUG_API) return
-
-  console.groupCollapsed(`[API response] ${endpoint}`)
+  console.groupCollapsed(`[API response][${FINAL_FRONT_VERSION}] ${endpoint}`)
   console.log(payload)
   console.groupEnd()
 }
@@ -58,16 +57,11 @@ function getResponseOutput(data, fallbackMessage) {
 export function normalizeMediaType(mediaType) {
   const value = String(mediaType || '').toLowerCase()
 
-  if (value === String(MEDIA_TYPES.BMP).toLowerCase() || value === 'bmp' || value.includes('bmp')) {
+  if (value === String(MEDIA_TYPES.BMP).toLowerCase() || value === 'bmp' || value.includes('bmp') || value.includes('image')) {
     return 'bmp'
   }
 
-  if (
-    value === String(MEDIA_TYPES.WAV).toLowerCase() ||
-    value === 'wav' ||
-    value.includes('wav') ||
-    value.includes('audio')
-  ) {
+  if (value === String(MEDIA_TYPES.WAV).toLowerCase() || value === 'wav' || value.includes('wav') || value.includes('audio')) {
     return 'wav'
   }
 
@@ -133,18 +127,8 @@ function appendSlidersToFormData(formData, mediaType, sliders = [1, 1, 1]) {
   })
 }
 
-const BACKEND_CIPHER_VALUES = {
-  [CIPHER_TYPES.CEZAR]: 'Szyfr Cezara',
-  [CIPHER_TYPES.VIGENERE]: "Szyfr Vigenere'a",
-  [CIPHER_TYPES.XOR]: 'Szyfr XOR',
-  [CIPHER_TYPES.ATBASH]: 'Szyfr Atbash',
-  [CIPHER_TYPES.ROT13]: 'ROT13',
-  [CIPHER_TYPES.RAIL_FENCE]: 'Szyfr płotkowy',
-  [CIPHER_TYPES.COLUMNAR]: 'Szyfr kolumnowy',
-}
-
 export function getBackendCipherValue(cipher) {
-  return BACKEND_CIPHER_VALUES[cipher] ?? cipher
+  return String(cipher || '')
 }
 
 function buildEncryptionPayload(cipher, text, key) {
@@ -355,34 +339,6 @@ export async function injectHeader(file, cipher, sliders, bits, deploymentMode, 
   return blob
 }
 
-export async function decodeFile(file, mediaType, key = '') {
-  const normalizedMediaType = normalizeMediaType(mediaType)
-  const endpoint = '/decoder/process'
-
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('media_type', normalizedMediaType)
-  formData.append('key', String(key ?? ''))
-
-  logApiRequest(endpoint, {
-    file: describeFile(file),
-    media_type: normalizedMediaType,
-    key: String(key ?? ''),
-  })
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    body: formData,
-  })
-
-  await ensureSuccessfulResponse(response, 'Decoding failed')
-  const data = await response.json()
-
-  logApiResponse(endpoint, data)
-
-  return data
-}
-
 export async function extractHeader(file, mediaType) {
   const normalizedMediaType = normalizeMediaType(mediaType)
   const endpoint = normalizedMediaType === 'bmp' ? '/header/extract-bmp-header/' : '/header/extract-wav-header/'
@@ -405,6 +361,33 @@ export async function extractHeader(file, mediaType) {
   logApiResponse(endpoint, data)
 
   return data
+}
+
+export async function restoreCarrierFile(file, mediaType) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const endpoint = normalizedMediaType === 'bmp' ? '/header/extract-bmp/' : '/header/extract-wav/'
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  logApiRequest(endpoint, {
+    file: describeFile(file),
+  })
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  await ensureSuccessfulResponse(response, 'Header restore failed')
+  const blob = await response.blob()
+
+  logApiResponse(endpoint, {
+    blob_size: blob.size,
+    blob_type: blob.type,
+  })
+
+  return blob
 }
 
 export async function extractSteganography(file, mediaType, deploymentMode = 0, sliders = [1, 1, 1], totalBits = null) {
@@ -448,4 +431,47 @@ export async function extractSteganography(file, mediaType, deploymentMode = 0, 
   }
 
   return data
+}
+
+export function buildRestoredFile(originalFile, restoredBlob, mediaType) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const defaultType = normalizedMediaType === 'wav' ? 'audio/wav' : 'image/bmp'
+
+  return new File([restoredBlob], originalFile.name, {
+    type: originalFile.type || defaultType,
+    lastModified: originalFile.lastModified,
+  })
+}
+
+export async function decodeEncodedFile(file, mediaType, key = '') {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const header = await extractHeader(file, normalizedMediaType)
+  const deploymentMode = Number(normalizeDeploymentMode(header.deployment_mode))
+  const sliders = normalizedMediaType === 'bmp'
+    ? normalizeSliders(normalizedMediaType, header.sliders)
+    : normalizeSliders(normalizedMediaType, [header.slider])
+  const totalBits = Number(header.bits)
+
+  const restoredBlob = await restoreCarrierFile(file, normalizedMediaType)
+  const restoredFile = buildRestoredFile(file, restoredBlob, normalizedMediaType)
+  const extracted = await extractSteganography(restoredFile, normalizedMediaType, deploymentMode, sliders, totalBits)
+  const encryptedText = extracted.message
+  const decryptedText = await decryptText(header.cipher, encryptedText, key)
+
+  return {
+    status: 'success',
+    message_detected: true,
+    cipher_used: header.cipher,
+    deployment_mode: deploymentMode === 1 ? 'Równomierne' : 'Ciągłe',
+    bits_extracted: totalBits,
+    decrypted_text: decryptedText,
+    encrypted_text: encryptedText,
+    header,
+    restoredFile,
+  }
+}
+
+// Alias dla starych importów: korzysta z deterministycznego flow po nagłówku.
+export async function decodeFile(file, mediaType, key = '') {
+  return decodeEncodedFile(file, mediaType, key)
 }
