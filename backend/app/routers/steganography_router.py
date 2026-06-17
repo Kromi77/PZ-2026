@@ -32,7 +32,11 @@ async def hide_message(
     file: UploadFile = File(...),
     encrypted_message: str = Form(...),
     media_type: str = Form(...),
-    deployment_mode: int = Form(0),
+    deployment_mode: int = Form(0, description="0 - ciągły, 1 - równomierny"),
+    sliderR: int = Form(1, description="Liczba bitów dla kanału R (BMP)"),
+    sliderG: int = Form(1, description="Liczba bitów dla kanału G (BMP)"),
+    sliderB: int = Form(1, description="Liczba bitów dla kanału B (BMP)"),
+    slider: int = Form(1, description="Liczba bitów dla próbek (WAV)"),
 ):
     """
     Ukrywa zaszyfrowaną wiadomość w pliku multimedialnym (BMP lub WAV).
@@ -83,6 +87,7 @@ async def hide_message(
                 file_content,
                 encrypted_message,
                 uniform=is_uniform,
+                sliders=[sliderR, sliderG, sliderB],
             )
             output_filename = "steganography_output.bmp"
         else:  # wav
@@ -90,6 +95,7 @@ async def hide_message(
                 file_content,
                 encrypted_message,
                 uniform=is_uniform,
+                slider=slider,
             )
             output_filename = "steganography_output.wav"
         
@@ -117,7 +123,13 @@ async def hide_message(
 @router.post("/extract", response_model=schema.SteganographyExtractResponse)
 async def extract_message(
     file: UploadFile = File(...),
-    media_type: str = Form(...)
+    media_type: str = Form(...),
+    deployment_mode: int = Form(0, description="0 - ciągły, 1 - równomierny"),
+    total_bits: int = Form(None, description="Całkowita liczba bitów (wymagane przy trybie równomiernym)"),
+    sliderR: int = Form(1, description="Liczba bitów dla kanału R (BMP)"),
+    sliderG: int = Form(1, description="Liczba bitów dla kanału G (BMP)"),
+    sliderB: int = Form(1, description="Liczba bitów dla kanału B (BMP)"),
+    slider: int = Form(1, description="Liczba bitów dla próbek (WAV)"),
 ):
     """
     Ekstraktuje ukrytą wiadomość z pliku multimedialnego.
@@ -149,12 +161,18 @@ async def extract_message(
                 status_code=400,
                 detail="Plik jest pusty"
             )
+            
+        is_uniform = deployment_mode == 1
         
         # Ekstraktuj wiadomość w zależności od typu pliku
         if media_type.lower() == "bmp":
-            extracted_message = service.extract_message_from_bmp(file_content)
+            extracted_message = service.extract_message_from_bmp(
+                file_content, uniform=is_uniform, total_bits=total_bits, sliders=[sliderR, sliderG, sliderB]
+            )
         else:  # wav
-            extracted_message = service.extract_message_from_wav(file_content)
+            extracted_message = service.extract_message_from_wav(
+                file_content, uniform=is_uniform, total_bits=total_bits, slider=slider
+            )
         
         if not extracted_message:
             raise HTTPException(

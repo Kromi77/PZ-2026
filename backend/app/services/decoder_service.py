@@ -130,13 +130,15 @@ def process_file(file_content: bytes, media_type: str, key: str = "") -> dict:
         encrypted_message = steganography_service.extract_message_from_bmp(
             bmp_file_content=file_content,
             uniform=is_uniform,
-            total_bits=total_bits
+            total_bits=total_bits,
+            sliders=sliders
         )
     else:
         encrypted_message = steganography_service.extract_message_from_wav(
             wav_file_content=file_content,
             uniform=is_uniform,
-            total_bits=total_bits
+            total_bits=total_bits,
+            slider=sliders[0]
         )
 
     if not encrypted_message:
