@@ -3,131 +3,153 @@ import WaveformCanvas from "./common/WaveformCanvas";
 import WaveformModal from "./common/WaveformModal";
 import { useWaveform } from "../hooks/useWaveform";
 
-/**
- * Komponent do porównania oscylogramów pliku WAV przed i po kodowaniu
- * Pokazuje waveform oryginalnego i zakodowanego pliku obok siebie
- * Pozwala na powiększenie klikając na oscylogram
- */
-export default function WaveformComparison({ originalFile, encodedFile }) {
-  const { waveformData: originalWaveform, isLoading: originalLoading } =
-    useWaveform(originalFile);
-  const { waveformData: encodedWaveform, isLoading: encodedLoading } =
-    useWaveform(encodedFile);
+function WaveformCard({
+  title,
+  waveformData,
+  isLoading,
+  error,
+  color,
+  onOpen,
+}) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
+      <p className="mb-2 text-sm font-semibold text-slate-300">{title}</p>
 
-  // State dla modala
+      <button
+        type="button"
+        onClick={onOpen}
+        disabled={isLoading || !waveformData}
+        className="block w-full rounded-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        <WaveformCanvas
+          waveformData={waveformData}
+          height={120}
+          color={color}
+          backgroundColor="#f3f4f6"
+          isLoading={isLoading}
+          clickable={Boolean(waveformData)}
+        />
+      </button>
+
+      {error ? (
+        <p className="mt-2 text-xs leading-relaxed text-red-400">{error}</p>
+      ) : (
+        <p className="mt-2 text-xs text-slate-500">🔍 Kliknij aby powiększyć</p>
+      )}
+    </div>
+  );
+}
+
+export default function WaveformComparison({ originalFile, encodedFile }) {
+  const {
+    waveformData: originalWaveform,
+    isLoading: originalLoading,
+    error: originalError,
+  } = useWaveform(originalFile);
+
+  const {
+    waveformData: encodedWaveform,
+    isLoading: encodedLoading,
+    error: encodedError,
+  } = useWaveform(encodedFile);
+
   const [selectedWaveform, setSelectedWaveform] = useState(null);
   const [selectedTitle, setSelectedTitle] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedColor, setSelectedColor] = useState("#3b82f6");
+  const [selectedLoading, setSelectedLoading] = useState(false);
+  const [selectedError, setSelectedError] = useState(null);
 
-  const openModal = (waveform, title, color) => {
+  function openModal({ waveform, title, color, isLoading, error }) {
     setSelectedWaveform(waveform);
     setSelectedTitle(title);
     setSelectedColor(color);
-  };
+    setSelectedLoading(isLoading);
+    setSelectedError(error);
+  }
 
-  const closeModal = () => {
+  function closeModal() {
     setSelectedWaveform(null);
     setSelectedTitle("");
-    setSelectedColor("");
-  };
+    setSelectedColor("#3b82f6");
+    setSelectedLoading(false);
+    setSelectedError(null);
+  }
 
   if (!originalFile && !encodedFile) {
     return null;
   }
 
-  return (
-    <div className="w-full mt-6 space-y-4">
-      <h3 className="font-semibold text-lg text-white">
-        Porównanie Oscylogramów
-      </h3>
+  const hasBothFiles = originalFile && encodedFile;
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Oscylogram przed */}
+  return (
+    <div className="mt-6 w-full space-y-4">
+      <h3 className="text-lg font-semibold text-white">Porównanie Oscylogramów</h3>
+
+      <div className={hasBothFiles ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "grid grid-cols-1 gap-4"}>
         {originalFile && (
-          <div className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
-            <p className="text-sm font-semibold text-slate-300 mb-2">
-              Przed kodowaniem
-            </p>
-            <div
-              className="cursor-pointer"
-              onClick={() =>
-                openModal(
-                  originalWaveform,
-                  "Oscylogram - Przed kodowaniem",
-                  "#10b981",
-                )
-              }
-            >
-              <WaveformCanvas
-                waveformData={originalWaveform}
-                height={120}
-                color="#10b981"
-                backgroundColor="#f3f4f6"
-                isLoading={originalLoading}
-                clickable={true}
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              🔍 Kliknij aby powiększyć
-            </p>
-          </div>
+          <WaveformCard
+            title="Przed kodowaniem"
+            waveformData={originalWaveform}
+            isLoading={originalLoading}
+            error={originalError}
+            color="#10b981"
+            onOpen={() =>
+              openModal({
+                waveform: originalWaveform,
+                title: "Oscylogram - Przed kodowaniem",
+                color: "#10b981",
+                isLoading: originalLoading,
+                error: originalError,
+              })
+            }
+          />
         )}
 
-        {/* Oscylogram po */}
         {encodedFile && (
-          <div className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
-            <p className="text-sm font-semibold text-slate-300 mb-2">
-              Po kodowaniu
-            </p>
-            <div
-              className="cursor-pointer"
-              onClick={() =>
-                openModal(
-                  encodedWaveform,
-                  "Oscylogram - Po kodowaniu",
-                  "#f59e0b",
-                )
-              }
-            >
-              <WaveformCanvas
-                waveformData={encodedWaveform}
-                height={120}
-                color="#f59e0b"
-                backgroundColor="#f3f4f6"
-                isLoading={encodedLoading}
-                clickable={true}
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              🔍 Kliknij aby powiększyć
-            </p>
-          </div>
+          <WaveformCard
+            title="Po kodowaniu"
+            waveformData={encodedWaveform}
+            isLoading={encodedLoading}
+            error={encodedError}
+            color="#f59e0b"
+            onOpen={() =>
+              openModal({
+                waveform: encodedWaveform,
+                title: "Oscylogram - Po kodowaniu",
+                color: "#f59e0b",
+                isLoading: encodedLoading,
+                error: encodedError,
+              })
+            }
+          />
         )}
       </div>
 
       {originalFile && encodedFile && (
         <div className="rounded-lg border border-white/10 bg-slate-950/30 p-4">
-          <p className="text-xs text-slate-500 text-center">
-            💡 Oscylogramy powinny wyglądać prawie identycznie - steganografia
-            LSB zmienia tylko najmniej znaczące bity
+          <p className="text-center text-xs text-slate-500">
+            💡 Oscylogramy powinny wyglądać prawie identycznie - steganografia LSB zmienia tylko najmniej znaczące bity
           </p>
         </div>
       )}
 
-      {/* Modal z powiększonym oscylogramem */}
       <WaveformModal
         isOpen={selectedWaveform !== null}
         onClose={closeModal}
         title={selectedTitle}
       >
         <div className="rounded-lg bg-white p-4">
-          <WaveformCanvas
-            waveformData={selectedWaveform}
-            height={300}
-            color={selectedColor}
-            backgroundColor="#f3f4f6"
-            isLoading={false}
-          />
+          {selectedError ? (
+            <p className="text-sm text-red-600">{selectedError}</p>
+          ) : (
+            <WaveformCanvas
+              waveformData={selectedWaveform}
+              height={320}
+              color={selectedColor}
+              backgroundColor="#f3f4f6"
+              isLoading={selectedLoading}
+            />
+          )}
         </div>
       </WaveformModal>
     </div>

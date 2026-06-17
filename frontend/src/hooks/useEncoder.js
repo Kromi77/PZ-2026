@@ -10,7 +10,7 @@ export function useEncoder() {
   const [text, setText] = useState('')
   const [cipher, setCipher] = useState(CIPHER_TYPES.CEZAR)
   const [key, setKey] = useState(getDefaultKeyForCipher(CIPHER_TYPES.CEZAR))
-  const [sliders, setSliders] = useState([0, 0, 0])
+  const [sliders, setSliders] = useState([1, 1, 1])
   const [deploymentMode, setDeploymentMode] = useState(DEPLOYMENT_MODES.CONTINUOUS)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -34,7 +34,7 @@ export function useEncoder() {
 
     setSliders((currentSliders) => {
       const nextSliders = [...currentSliders]
-      nextSliders[index] = Number.isNaN(parsedValue) ? 0 : parsedValue
+      nextSliders[index] = Number.isNaN(parsedValue) ? 1 : Math.min(8, Math.max(0, parsedValue))
       return nextSliders
     })
   }
@@ -63,15 +63,23 @@ export function useEncoder() {
 
     try {
       const encryptedText = await encryptText(cipher, text, key)
-      const bits = new Blob([encryptedText]).size * 8 + 32
+      const bits = new TextEncoder().encode(encryptedText).length * 8 + 32
 
-      const modifiedMediaBlob = await hideSteganography(file, encryptedText, mediaType)
-      const modifiedMediaFile = new File([modifiedMediaBlob], file.name, {
+      const stegoBlob = await hideSteganography(
+        file,
+        encryptedText,
+        mediaType,
+        deploymentMode,
+        sliders,
+      )
+
+      const stegoFile = new File([stegoBlob], file.name, {
         type: file.type,
+        lastModified: file.lastModified,
       })
 
       const finalBlob = await injectHeader(
-        modifiedMediaFile,
+        stegoFile,
         cipher,
         sliders,
         bits,

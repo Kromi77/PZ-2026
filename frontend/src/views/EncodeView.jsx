@@ -14,13 +14,15 @@ import { UI_TEXT } from "../i18n";
 const inputClassName =
   "w-full rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/80 to-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none shadow-inner shadow-black/20 transition-all duration-300 placeholder:text-slate-600 hover:border-white/20 hover:bg-slate-900/80 focus:border-white/20 focus:bg-slate-900/90 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(15,23,42,0.35)] focus:ring-0";
 
-function DeploymentOption({ label, checked, onChange }) {
+function DeploymentOption({ label, checked, onChange, disabled = false }) {
   return (
     <label
-      className={`cursor-pointer rounded-2xl border p-4 transition-all duration-300 ${
-        checked
-          ? "border-violet-300/50 bg-violet-300/10 text-violet-50 shadow-inner shadow-violet-950/20"
-          : "border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20 hover:bg-white/4 hover:text-slate-100"
+      className={`rounded-2xl border p-4 transition-all duration-300 ${
+        disabled
+          ? "cursor-not-allowed border-white/5 bg-slate-950/30 text-slate-600"
+          : checked
+            ? "cursor-pointer border-violet-300/50 bg-violet-300/10 text-violet-50 shadow-inner shadow-violet-950/20"
+            : "cursor-pointer border-white/10 bg-slate-950/40 text-slate-300 hover:border-white/20 hover:bg-white/4 hover:text-slate-100"
       }`}
     >
       <input
@@ -28,6 +30,7 @@ function DeploymentOption({ label, checked, onChange }) {
         name="deployment"
         checked={checked}
         onChange={onChange}
+        disabled={disabled}
         className="sr-only"
       />
 
