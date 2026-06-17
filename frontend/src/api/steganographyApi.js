@@ -1,6 +1,35 @@
 import { API_BASE_URL, MEDIA_TYPES } from '../config/appConfig'
 import { CIPHER_TYPES } from '../config/ciphers'
 
+const DEBUG_API = true
+
+function describeFile(file) {
+  if (!file) return null
+
+  return {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    lastModified: file.lastModified,
+  }
+}
+
+function logApiRequest(endpoint, payload) {
+  if (!DEBUG_API) return
+
+  console.groupCollapsed(`[API request] ${endpoint}`)
+  console.log(payload)
+  console.groupEnd()
+}
+
+function logApiResponse(endpoint, payload) {
+  if (!DEBUG_API) return
+
+  console.groupCollapsed(`[API response] ${endpoint}`)
+  console.log(payload)
+  console.groupEnd()
+}
+
 async function getApiError(response, fallbackMessage) {
   try {
     const error = await response.json()
@@ -26,21 +55,26 @@ function getResponseOutput(data, fallbackMessage) {
   return output
 }
 
-function normalizeMediaType(mediaType) {
+export function normalizeMediaType(mediaType) {
   const value = String(mediaType || '').toLowerCase()
 
   if (value === String(MEDIA_TYPES.BMP).toLowerCase() || value === 'bmp' || value.includes('bmp')) {
     return 'bmp'
   }
 
-  if (value === String(MEDIA_TYPES.WAV).toLowerCase() || value === 'wav' || value.includes('wav') || value.includes('audio')) {
+  if (
+    value === String(MEDIA_TYPES.WAV).toLowerCase() ||
+    value === 'wav' ||
+    value.includes('wav') ||
+    value.includes('audio')
+  ) {
     return 'wav'
   }
 
   return value
 }
 
-function normalizeDeploymentMode(deploymentMode) {
+export function normalizeDeploymentMode(deploymentMode) {
   const value = String(deploymentMode ?? '').toLowerCase()
 
   if (value === '1' || value.includes('uniform') || value.includes('równomier')) {
@@ -50,7 +84,56 @@ function normalizeDeploymentMode(deploymentMode) {
   return '0'
 }
 
-const HEADER_CIPHER_VALUES = {
+export function normalizeSliderValue(value, fallback = 1) {
+  const parsedValue = parseInt(value, 10)
+
+  if (Number.isNaN(parsedValue)) {
+    return fallback
+  }
+
+  return Math.min(8, Math.max(0, parsedValue))
+}
+
+export function normalizeSliders(mediaType, sliders = [1, 1, 1]) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+
+  if (normalizedMediaType === 'bmp') {
+    return [
+      normalizeSliderValue(sliders[0]),
+      normalizeSliderValue(sliders[1]),
+      normalizeSliderValue(sliders[2]),
+    ]
+  }
+
+  return [normalizeSliderValue(sliders[0])]
+}
+
+function getSliderPayload(mediaType, sliders = [1, 1, 1]) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const normalizedSliders = normalizeSliders(normalizedMediaType, sliders)
+
+  if (normalizedMediaType === 'bmp') {
+    return {
+      sliderR: normalizedSliders[0],
+      sliderG: normalizedSliders[1],
+      sliderB: normalizedSliders[2],
+    }
+  }
+
+  return {
+    slider: normalizedSliders[0],
+  }
+}
+
+function appendSlidersToFormData(formData, mediaType, sliders = [1, 1, 1]) {
+  const sliderPayload = getSliderPayload(mediaType, sliders)
+
+  Object.entries(sliderPayload).forEach(([key, value]) => {
+    formData.append(key, String(value))
+  })
+}
+
+const BACKEND_CIPHER_VALUES = {
   [CIPHER_TYPES.CEZAR]: 'Szyfr Cezara',
   [CIPHER_TYPES.VIGENERE]: "Szyfr Vigenere'a",
   [CIPHER_TYPES.XOR]: 'Szyfr XOR',
@@ -60,8 +143,8 @@ const HEADER_CIPHER_VALUES = {
   [CIPHER_TYPES.COLUMNAR]: 'Szyfr kolumnowy',
 }
 
-function getHeaderCipherValue(cipher) {
-  return HEADER_CIPHER_VALUES[cipher] ?? cipher
+export function getBackendCipherValue(cipher) {
+  return BACKEND_CIPHER_VALUES[cipher] ?? cipher
 }
 
 function buildEncryptionPayload(cipher, text, key) {
@@ -121,43 +204,43 @@ function buildDecryptionPayload(cipher, text, key) {
   switch (cipher) {
     case CIPHER_TYPES.CEZAR:
       return {
-        endpoints: ['/caesar/decrypt'],
+        endpoint: '/caesar/decrypt',
         body: { ...body, shift: parseInt(key, 10) },
       }
 
     case CIPHER_TYPES.VIGENERE:
       return {
-        endpoints: ['/vinegre/decrypt'],
+        endpoint: '/vinegre/decrypt',
         body: { ...body, key: String(key) },
       }
 
     case CIPHER_TYPES.XOR:
       return {
-        endpoints: ['/decrypt/xor', '/encrypt/xor'],
+        endpoint: '/decrypt/xor',
         body: { ...body, key: String(key) },
       }
 
     case CIPHER_TYPES.ATBASH:
       return {
-        endpoints: ['/atbash/decrypt', '/atbash/encrypt'],
+        endpoint: '/atbash/decrypt',
         body,
       }
 
     case CIPHER_TYPES.ROT13:
       return {
-        endpoints: ['/rot13/process'],
+        endpoint: '/rot13/process',
         body,
       }
 
     case CIPHER_TYPES.RAIL_FENCE:
       return {
-        endpoints: ['/railfence/decrypt'],
+        endpoint: '/railfence/decrypt',
         body: { ...body, rails: parseInt(key, 10) },
       }
 
     case CIPHER_TYPES.COLUMNAR:
       return {
-        endpoints: ['/columnar/decrypt'],
+        endpoint: '/columnar/decrypt',
         body: { ...body, key: String(key) },
       }
 
@@ -167,6 +250,8 @@ function buildDecryptionPayload(cipher, text, key) {
 }
 
 async function postJson(endpoint, body, fallbackMessage) {
+  logApiRequest(endpoint, body)
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -174,21 +259,11 @@ async function postJson(endpoint, body, fallbackMessage) {
   })
 
   await ensureSuccessfulResponse(response, fallbackMessage)
-  return response.json()
-}
+  const data = await response.json()
 
-async function postJsonWithFallback(endpoints, body, fallbackMessage) {
-  let lastError = null
+  logApiResponse(endpoint, data)
 
-  for (const endpoint of endpoints) {
-    try {
-      return await postJson(endpoint, body, fallbackMessage)
-    } catch (error) {
-      lastError = error
-    }
-  }
-
-  throw lastError || new Error(fallbackMessage)
+  return data
 }
 
 export async function encryptText(cipher, text, key) {
@@ -199,73 +274,70 @@ export async function encryptText(cipher, text, key) {
 }
 
 export async function decryptText(cipher, text, key) {
-  const { endpoints, body } = buildDecryptionPayload(cipher, text, key)
-  const data = await postJsonWithFallback(endpoints, body, 'Decryption failed')
+  const { endpoint, body } = buildDecryptionPayload(cipher, text, key)
+  const data = await postJson(endpoint, body, 'Decryption failed')
 
   return getResponseOutput(data, 'Decryption response does not contain output')
 }
 
-export async function hideSteganography(file, encryptedMessage, mediaType, deploymentMode = 0) {
+export async function hideSteganography(file, encryptedMessage, mediaType, deploymentMode = 0, sliders = [1, 1, 1]) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const normalizedDeploymentMode = normalizeDeploymentMode(deploymentMode)
+  const sliderPayload = getSliderPayload(normalizedMediaType, sliders)
+  const endpoint = '/steganography/hide'
+
   const formData = new FormData()
   formData.append('file', file)
   formData.append('encrypted_message', encryptedMessage)
-  formData.append('media_type', normalizeMediaType(mediaType))
-  formData.append('deployment_mode', normalizeDeploymentMode(deploymentMode))
+  formData.append('media_type', normalizedMediaType)
+  formData.append('deployment_mode', normalizedDeploymentMode)
+  appendSlidersToFormData(formData, normalizedMediaType, sliders)
 
-  const response = await fetch(`${API_BASE_URL}/steganography/hide`, {
+  logApiRequest(endpoint, {
+    file: describeFile(file),
+    encrypted_message: encryptedMessage,
+    media_type: normalizedMediaType,
+    deployment_mode: normalizedDeploymentMode,
+    ...sliderPayload,
+  })
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     body: formData,
   })
 
   await ensureSuccessfulResponse(response, 'Steganography hide failed')
+  const blob = await response.blob()
 
-  return response.blob()
-}
-
-export async function extractSteganography(file, mediaType, deploymentMode = 0) {
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('media_type', normalizeMediaType(mediaType))
-  formData.append('deployment_mode', normalizeDeploymentMode(deploymentMode))
-
-  const response = await fetch(`${API_BASE_URL}/steganography/extract`, {
-    method: 'POST',
-    body: formData,
+  logApiResponse(endpoint, {
+    blob_size: blob.size,
+    blob_type: blob.type,
   })
 
-  await ensureSuccessfulResponse(response, 'Steganography extract failed')
-
-  const data = await response.json()
-  const message = data.message
-
-  if (typeof message !== 'string') {
-    throw new Error('Steganography extract response does not contain message')
-  }
-
-  return data
+  return blob
 }
 
-// Funkcja zostaje w API na przyszłość, ale obecny stabilny flow jej nie wywołuje.
-// Wariant z nagłówkiem/hash wymaga poprawnego backendowego /header/inject-*.
 export async function injectHeader(file, cipher, sliders, bits, deploymentMode, mediaType) {
   const normalizedMediaType = normalizeMediaType(mediaType)
+  const normalizedDeploymentMode = normalizeDeploymentMode(deploymentMode)
+  const backendCipher = getBackendCipherValue(cipher)
+  const sliderPayload = getSliderPayload(normalizedMediaType, sliders)
+  const endpoint = normalizedMediaType === 'bmp' ? '/header/inject-bmp/' : '/header/inject-wav/'
 
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('cipher', getHeaderCipherValue(cipher))
+  formData.append('cipher', backendCipher)
+  formData.append('bits', String(bits))
+  formData.append('deployment_mode', normalizedDeploymentMode)
+  appendSlidersToFormData(formData, normalizedMediaType, sliders)
 
-  if (normalizedMediaType === 'bmp') {
-    formData.append('sliderR', sliders[0] || 0)
-    formData.append('sliderG', sliders[1] || 0)
-    formData.append('sliderB', sliders[2] || 0)
-  } else {
-    formData.append('slider', sliders[0] || 0)
-  }
-
-  formData.append('bits', bits)
-  formData.append('deployment_mode', normalizeDeploymentMode(deploymentMode))
-
-  const endpoint = normalizedMediaType === 'bmp' ? '/header/inject-bmp/' : '/header/inject-wav/'
+  logApiRequest(endpoint, {
+    file: describeFile(file),
+    cipher: backendCipher,
+    bits,
+    deployment_mode: normalizedDeploymentMode,
+    ...sliderPayload,
+  })
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
@@ -273,24 +345,107 @@ export async function injectHeader(file, cipher, sliders, bits, deploymentMode, 
   })
 
   await ensureSuccessfulResponse(response, 'Header injection failed')
+  const blob = await response.blob()
 
-  return response.blob()
+  logApiResponse(endpoint, {
+    blob_size: blob.size,
+    blob_type: blob.type,
+  })
+
+  return blob
 }
 
-// Stary automatyczny dekoder oparty o nagłówek/hash.
-// Nie używaj dla plików generowanych bez injectHeader.
 export async function decodeFile(file, mediaType, key = '') {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const endpoint = '/decoder/process'
+
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('media_type', normalizeMediaType(mediaType))
-  formData.append('key', key)
+  formData.append('media_type', normalizedMediaType)
+  formData.append('key', String(key ?? ''))
 
-  const response = await fetch(`${API_BASE_URL}/decoder/process`, {
+  logApiRequest(endpoint, {
+    file: describeFile(file),
+    media_type: normalizedMediaType,
+    key: String(key ?? ''),
+  })
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     body: formData,
   })
 
   await ensureSuccessfulResponse(response, 'Decoding failed')
+  const data = await response.json()
 
-  return response.json()
+  logApiResponse(endpoint, data)
+
+  return data
+}
+
+export async function extractHeader(file, mediaType) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const endpoint = normalizedMediaType === 'bmp' ? '/header/extract-bmp-header/' : '/header/extract-wav-header/'
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  logApiRequest(endpoint, {
+    file: describeFile(file),
+  })
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  await ensureSuccessfulResponse(response, 'Header extraction failed')
+  const data = await response.json()
+
+  logApiResponse(endpoint, data)
+
+  return data
+}
+
+export async function extractSteganography(file, mediaType, deploymentMode = 0, sliders = [1, 1, 1], totalBits = null) {
+  const normalizedMediaType = normalizeMediaType(mediaType)
+  const normalizedDeploymentMode = normalizeDeploymentMode(deploymentMode)
+  const sliderPayload = getSliderPayload(normalizedMediaType, sliders)
+  const endpoint = '/steganography/extract'
+
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('media_type', normalizedMediaType)
+  formData.append('deployment_mode', normalizedDeploymentMode)
+  appendSlidersToFormData(formData, normalizedMediaType, sliders)
+
+  if (totalBits !== null && totalBits !== undefined && totalBits !== '') {
+    formData.append('total_bits', String(totalBits))
+  }
+
+  logApiRequest(endpoint, {
+    file: describeFile(file),
+    media_type: normalizedMediaType,
+    deployment_mode: normalizedDeploymentMode,
+    total_bits: totalBits ?? undefined,
+    ...sliderPayload,
+  })
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  await ensureSuccessfulResponse(response, 'Steganography extract failed')
+  const data = await response.json()
+
+  logApiResponse(endpoint, data)
+
+  const message = data.message
+
+  if (typeof message !== 'string') {
+    throw new Error('Steganography extract response does not contain message')
+  }
+
+  return data
 }

@@ -3,8 +3,9 @@ import Button from "../components/common/Button";
 import FileDropzone from "../components/common/FileDropzone";
 import FormField from "../components/common/FormField";
 import MediaPreview from "../components/common/MediaPreview";
+import SliderControl from "../components/common/SliderControl";
 import WaveformComparison from "../components/WaveformComparison";
-import { DEPLOYMENT_MODES } from "../config/appConfig";
+import { DEPLOYMENT_MODES, MEDIA_TYPES } from "../config/appConfig";
 import { CIPHER_OPTIONS, cipherRequiresKey } from "../config/ciphers";
 import { useDecoder } from "../hooks/useDecoder";
 import { UI_TEXT } from "../i18n";
@@ -55,6 +56,8 @@ export default function DecodeView() {
     handleCipherChange,
     key,
     setKey,
+    sliders,
+    handleSliderChange,
     deploymentMode,
     handleDeploymentModeChange,
     loading,
@@ -108,18 +111,59 @@ export default function DecodeView() {
             </FormField>
 
             {showKeyField && (
-              <FormField
-                label={UI_TEXT.decoder.key}
-                hint={UI_TEXT.decoder.keyHint}
-              >
+              <FormField label="Klucz użyty przy kodowaniu">
                 <input
                   type="text"
                   value={key}
                   onChange={(event) => setKey(event.target.value)}
-                  placeholder={UI_TEXT.decoder.keyPlaceholder}
+                  placeholder="Wpisz ten sam klucz, którego użyto przy kodowaniu"
                   className={inputClassName}
                 />
               </FormField>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-slate-100">
+                {mediaType === MEDIA_TYPES.BMP
+                  ? UI_TEXT.encoder.bmpSliders
+                  : UI_TEXT.encoder.wavSlider}
+              </h3>
+
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                Podaj te same suwaki, których użyto przy kodowaniu. Standardowy
+                dekoder czyta je z nagłówka, a wartości poniżej są używane jako
+                awaryjny fallback.
+              </p>
+            </div>
+
+            {mediaType === MEDIA_TYPES.BMP ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                <SliderControl
+                  label="R"
+                  value={sliders[0]}
+                  onChange={(value) => handleSliderChange(0, value)}
+                />
+
+                <SliderControl
+                  label="G"
+                  value={sliders[1]}
+                  onChange={(value) => handleSliderChange(1, value)}
+                />
+
+                <SliderControl
+                  label="B"
+                  value={sliders[2]}
+                  onChange={(value) => handleSliderChange(2, value)}
+                />
+              </div>
+            ) : (
+              <SliderControl
+                label={UI_TEXT.encoder.sliderValue}
+                value={sliders[0]}
+                onChange={(value) => handleSliderChange(0, value)}
+              />
             )}
           </div>
 
@@ -132,13 +176,17 @@ export default function DecodeView() {
               <DeploymentOption
                 label={UI_TEXT.encoder.continuous}
                 checked={deploymentMode === DEPLOYMENT_MODES.CONTINUOUS}
-                onChange={() => handleDeploymentModeChange(DEPLOYMENT_MODES.CONTINUOUS)}
+                onChange={() =>
+                  handleDeploymentModeChange(DEPLOYMENT_MODES.CONTINUOUS)
+                }
               />
 
               <DeploymentOption
                 label={UI_TEXT.encoder.uniform}
                 checked={deploymentMode === DEPLOYMENT_MODES.UNIFORM}
-                onChange={() => handleDeploymentModeChange(DEPLOYMENT_MODES.UNIFORM)}
+                onChange={() =>
+                  handleDeploymentModeChange(DEPLOYMENT_MODES.UNIFORM)
+                }
               />
             </div>
           </div>
@@ -194,27 +242,29 @@ export default function DecodeView() {
               />
             </div>
 
-            <div className="mt-5">
-              <p className="mb-2 text-sm font-bold text-slate-200">
-                Zaszyfrowany tekst wyciągnięty z pliku
-              </p>
+            {result.encrypted_text && (
+              <div className="mt-5">
+                <p className="mb-2 text-sm font-bold text-slate-200">
+                  Zaszyfrowany tekst wyciągnięty z pliku
+                </p>
 
-              <div className="min-h-20 whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-100">
-                {result.encrypted_text || "-"}
+                <div className="max-h-40 min-h-20 overflow-y-auto overscroll-contain wrap-break-word whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/5 p-4 pr-3 text-sm leading-6 text-slate-100">
+                  {result.encrypted_text}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="mt-5">
               <p className="mb-2 text-sm font-bold text-slate-200">
                 {UI_TEXT.decoder.decryptedText}
               </p>
 
-              <div className="min-h-32 whitespace-pre-wrap rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-50">
+              <div className="min-h-64 max-h-130 overflow-y-auto overscroll-contain wrap-break-word whitespace-pre-wrap rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 pr-3 text-sm leading-6 text-emerald-50">
                 {result.decrypted_text || "-"}
               </div>
             </div>
 
-            {file && mediaType === "wav" && (
+            {file && mediaType === MEDIA_TYPES.WAV && (
               <div className="mt-5">
                 <WaveformComparison encodedFile={file} />
               </div>

@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { CIPHER_TYPES, getDefaultKeyForCipher } from '../config/ciphers'
 import { DEPLOYMENT_MODES } from '../config/appConfig'
-import { encryptText, hideSteganography } from '../api/steganographyApi'
+import { encryptText, hideSteganography, injectHeader } from '../api/steganographyApi'
 import { validateCipherKey } from '../utils/validateCipherKey'
 import { useMediaFile } from './useMediaFile'
 import { UI_TEXT } from '../i18n'
+
+function calculateMessageBits(message) {
+  return new TextEncoder().encode(message).length * 8 + 32
+}
 
 export function useEncoder() {
   const [text, setText] = useState('')
   const [cipher, setCipher] = useState(CIPHER_TYPES.CEZAR)
   const [key, setKey] = useState(getDefaultKeyForCipher(CIPHER_TYPES.CEZAR))
-  const [sliders, setSliders] = useState([0, 0, 0])
+  const [sliders, setSliders] = useState([1, 1, 1])
   const [deploymentMode, setDeploymentMode] = useState(DEPLOYMENT_MODES.CONTINUOUS)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -34,7 +38,7 @@ export function useEncoder() {
 
     setSliders((currentSliders) => {
       const nextSliders = [...currentSliders]
-      nextSliders[index] = Number.isNaN(parsedValue) ? 0 : parsedValue
+      nextSliders[index] = Number.isNaN(parsedValue) ? 1 : Math.min(8, Math.max(0, parsedValue))
       return nextSliders
     })
   }
@@ -57,23 +61,68 @@ export function useEncoder() {
       return
     }
 
-
     setLoading(true)
     setError('')
     setResultFile(null)
 
     try {
+      console.groupCollapsed('[ENCODE flow] dane wejściowe')
+      console.log({
+        file: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+        mediaType,
+        cipher,
+        key,
+        sliders,
+        deploymentMode,
+        text,
+      })
+      console.groupEnd()
+
       const encryptedText = await encryptText(cipher, text, key)
-      const modifiedMediaBlob = await hideSteganography(
+      const bits = calculateMessageBits(encryptedText)
+
+      console.groupCollapsed('[ENCODE flow] po szyfrowaniu')
+      console.log({ encryptedText, bits })
+      console.groupEnd()
+
+      const stegoBlob = await hideSteganography(
         file,
         encryptedText,
         mediaType,
         deploymentMode,
+        sliders,
       )
 
-      const finalFile = new File([modifiedMediaBlob], `encoded_${file.name}`, {
+      const stegoFile = new File([stegoBlob], file.name, {
         type: file.type,
       })
+
+      const finalBlob = await injectHeader(
+        stegoFile,
+        cipher,
+        sliders,
+        bits,
+        deploymentMode,
+        mediaType,
+      )
+
+      const finalFile = new File([finalBlob], `encoded_${file.name}`, {
+        type: file.type,
+      })
+
+      console.groupCollapsed('[ENCODE flow] wynik końcowy')
+      console.log({
+        resultFile: {
+          name: finalFile.name,
+          type: finalFile.type,
+          size: finalFile.size,
+        },
+      })
+      console.groupEnd()
 
       setResultFile(finalFile)
     } catch (err) {

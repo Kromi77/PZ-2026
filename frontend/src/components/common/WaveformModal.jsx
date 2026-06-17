@@ -1,49 +1,73 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 
-/**
- * Modal do wyświetlania powiększonego oscylogramu
- * Obsługuje zamykanie po Escape i kliknięciu na tło
- */
-export default function WaveformModal({ isOpen, onClose, title, children }) {
+export default function WaveformModal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  panelClassName = "",
+  bodyClassName = "",
+}) {
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return undefined;
+    }
 
-    // Zamknij modal na Escape
-    const handleEscape = (e) => {
-      if (e.key === "Escape") {
+    const previousOverflow = document.body.style.overflow;
+
+    function handleEscape(event) {
+      if (event.key === "Escape") {
         onClose();
       }
-    };
+    }
 
     document.addEventListener("keydown", handleEscape);
-    // Zapobiegaj scrollowaniu strony gdy modal jest otwarty
     document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = previousOverflow;
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      {/* Tło - zamyka modal po kliknięciu */}
-      <div className="absolute inset-0" onClick={onClose} />
+  function handleBackdropMouseDown(event) {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }
 
-      {/* Zawartość modala */}
-      <div className="relative z-10 w-full max-w-4xl mx-4 rounded-lg bg-slate-900 shadow-2xl border border-white/10">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 p-5 sm:p-6">
+  const modal = (
+    <div
+      className="fixed inset-0 z-[999999] flex items-center justify-center overflow-hidden bg-black/80 p-4 backdrop-blur-sm"
+      style={{
+        width: "100vw",
+        height: "100dvh",
+      }}
+      onMouseDown={handleBackdropMouseDown}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div
+        className={`flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/60 ${panelClassName}`}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
           <h2 className="text-xl font-bold text-white">{title}</h2>
+
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition rounded-lg p-1 hover:bg-white/10"
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-white/10 hover:text-white"
             aria-label="Zamknij"
           >
             <svg
-              className="w-6 h-6"
+              className="h-6 w-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -58,22 +82,14 @@ export default function WaveformModal({ isOpen, onClose, title, children }) {
           </button>
         </div>
 
-        {/* Zawartość */}
-        <div className="p-5 sm:p-6 overflow-y-auto max-h-[80vh]">
+        <div
+          className={`min-h-0 flex-1 overflow-auto px-5 py-5 sm:px-6 ${bodyClassName}`}
+        >
           {children}
-        </div>
-
-        {/* Hint */}
-        <div className="border-t border-white/10 px-5 py-3 sm:px-6 bg-slate-950/50 text-center">
-          <p className="text-xs text-slate-500">
-            Kliknij poza oscylogram lub naciśnij{" "}
-            <kbd className="px-2 py-1 rounded bg-white/10 text-slate-300 font-mono text-xs">
-              ESC
-            </kbd>{" "}
-            aby zamknąć
-          </p>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

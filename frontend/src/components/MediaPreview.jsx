@@ -1,37 +1,65 @@
-import React, { useState } from "react";
-import { UI_TEXT } from "../i18n";
-import WaveformCanvas from "./common/WaveformCanvas";
-import WaveformModal from "./common/WaveformModal";
-import { useWaveform } from "../hooks/useWaveform";
+import React, { useEffect, useState } from 'react'
+import { UI_TEXT } from '../i18n'
+import WaveformCanvas from './common/WaveformCanvas'
+import WaveformModal from './common/WaveformModal'
+import { createPlayableWavPreviewBlob, useWaveform } from '../hooks/useWaveform'
 
 export default function MediaPreview({ file, label, mediaType }) {
-  const { waveformData, isLoading, error } = useWaveform(
-    mediaType === "wav" ? file : null,
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { waveformData, isLoading, error } = useWaveform(mediaType === 'wav' ? file : null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [url, setUrl] = useState('')
 
-  if (!file) return null;
+  useEffect(() => {
+    let objectUrl = ''
+    let cancelled = false
 
-  const url = URL.createObjectURL(file);
+    async function prepareUrl() {
+      if (!file) {
+        setUrl('')
+        return
+      }
+
+      const previewSource = mediaType === 'wav' ? await createPlayableWavPreviewBlob(file) : file
+
+      if (!cancelled) {
+        objectUrl = URL.createObjectURL(previewSource)
+        setUrl(objectUrl)
+      }
+    }
+
+    prepareUrl().catch(() => {
+      if (!cancelled && file) {
+        objectUrl = URL.createObjectURL(file)
+        setUrl(objectUrl)
+      }
+    })
+
+    return () => {
+      cancelled = true
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }, [file, mediaType])
+
+  if (!file || !url) return null
 
   return (
     <>
       <div className="flex flex-col gap-2 mt-4 items-center w-full">
         <h3 className="font-semibold text-lg">{label}</h3>
-        {mediaType === "bmp" ? (
+        {mediaType === 'bmp' ? (
           <img
             src={url}
             alt={label}
             className="max-w-full h-auto border rounded shadow"
-            style={{ maxHeight: "300px" }}
+            style={{ maxHeight: '300px' }}
           />
-        ) : mediaType === "wav" ? (
+        ) : mediaType === 'wav' ? (
           <div className="w-full">
             {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
-            <div
-              className="cursor-pointer"
-              onClick={() => setIsModalOpen(true)}
-            >
+            <div className="cursor-pointer" onClick={() => setIsModalOpen(true)}>
               <WaveformCanvas
                 waveformData={waveformData}
                 height={150}
@@ -54,7 +82,6 @@ export default function MediaPreview({ file, label, mediaType }) {
         )}
       </div>
 
-      {/* Modal z powiększonym oscylogramem WAV */}
       <WaveformModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -71,5 +98,5 @@ export default function MediaPreview({ file, label, mediaType }) {
         </div>
       </WaveformModal>
     </>
-  );
+  )
 }
