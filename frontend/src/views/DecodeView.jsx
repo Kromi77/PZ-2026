@@ -4,7 +4,6 @@ import FileDropzone from "../components/common/FileDropzone";
 import FormField from "../components/common/FormField";
 import MediaPreview from "../components/common/MediaPreview";
 import SliderControl from "../components/common/SliderControl";
-import WaveformComparison from "../components/WaveformComparison";
 import { DEPLOYMENT_MODES, MEDIA_TYPES } from "../config/appConfig";
 import { CIPHER_OPTIONS } from "../config/ciphers";
 import { useDecoder } from "../hooks/useDecoder";
@@ -96,9 +95,11 @@ export default function DecodeView() {
 
           {detectedHeader && (
             <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-xs leading-6 text-emerald-50">
-              Wykryto nagłówek pliku: szyfr <strong>{detectedHeader.cipher}</strong>, tryb{" "}
+              Wykryto nagłówek pliku: szyfr{" "}
+              <strong>{detectedHeader.cipher}</strong>, tryb{" "}
               <strong>
-                {Number(detectedHeader.deployment_mode) === DEPLOYMENT_MODES.UNIFORM
+                {Number(detectedHeader.deployment_mode) ===
+                DEPLOYMENT_MODES.UNIFORM
                   ? "Równomierne"
                   : "Ciągłe"}
               </strong>
@@ -141,7 +142,9 @@ export default function DecodeView() {
               </h3>
 
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Po wczytaniu pliku aplikacja próbuje odczytać suwaki z nagłówka. Wartości poniżej są używane także jako fallback, jeśli standardowy dekoder nie odczyta wiadomości.
+                Po wczytaniu pliku aplikacja próbuje odczytać suwaki z nagłówka.
+                Wartości poniżej są używane także jako fallback, jeśli
+                standardowy dekoder nie odczyta wiadomości.
               </p>
             </div>
 
@@ -270,12 +273,6 @@ export default function DecodeView() {
                 {result.decrypted_text || "-"}
               </div>
             </div>
-
-            {file && mediaType === MEDIA_TYPES.WAV && (
-              <div className="mt-5">
-                <WaveformComparison encodedFile={file} />
-              </div>
-            )}
           </div>
         ) : (
           <div className="flex min-h-80 items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/45 p-8 text-center text-sm leading-6 text-slate-500">

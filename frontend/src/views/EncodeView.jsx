@@ -5,7 +5,6 @@ import FileDropzone from "../components/common/FileDropzone";
 import FormField from "../components/common/FormField";
 import MediaPreview from "../components/common/MediaPreview";
 import SliderControl from "../components/common/SliderControl";
-import WaveformComparison from "../components/WaveformComparison";
 import { DEPLOYMENT_MODES, MEDIA_TYPES } from "../config/appConfig";
 import { CIPHER_OPTIONS, cipherRequiresKey } from "../config/ciphers";
 import { useEncoder } from "../hooks/useEncoder";
@@ -216,10 +215,6 @@ export default function EncodeView() {
           label={UI_TEXT.encoder.encodedMedia}
           mediaType={mediaType}
         />
-
-        {mediaType === MEDIA_TYPES.WAV && file && resultFile && (
-          <WaveformComparison originalFile={file} encodedFile={resultFile} />
-        )}
 
         {resultFile ? (
           <DownloadLink file={resultFile}>

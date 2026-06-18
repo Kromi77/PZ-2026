@@ -130,7 +130,9 @@ export default function MediaPreview({ file, label, mediaType }) {
     return URL.createObjectURL(previewFile);
   }, [previewFile]);
 
-  const { waveformData, isLoading, error } = useWaveform(isWav ? previewFile : null);
+  const { waveformData, isLoading, error } = useWaveform(
+    isWav ? previewFile : null,
+  );
 
   useEffect(() => {
     return () => {
