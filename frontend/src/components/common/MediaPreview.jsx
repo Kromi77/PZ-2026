@@ -165,7 +165,7 @@ export default function MediaPreview({ file, label, mediaType }) {
               <img
                 src={fileUrl}
                 alt={label}
-                className="mx-auto block max-h-[300px] max-w-full rounded-xl object-contain shadow"
+                className="mx-auto block max-h-[300px] max-w-full rounded-xl object-contain shadow min-h-[250px]"
               />
             </button>
 
