@@ -23,7 +23,7 @@ def test_decoder_api_rejects_invalid_media_type():
     )
     
     assert response.status_code == 400
-    assert "Nieobs≥ugiwany format" in response.json()["detail"] or "Analiza pliku wykaza≥a brak" in response.json()["detail"]
+    assert "Nieobs≈Çugiwany format" in response.json()["detail"] or "Analiza pliku wykaza≈Ça brak" in response.json()["detail"]
 
 def test_decoder_api_bmp_success():
     final_bmp = build_test_bmp_pipeline(sliders=[2, 0, 1])
@@ -67,7 +67,7 @@ def test_decoder_api_rejects_empty_file():
     )
     
     assert response.status_code == 400
-    assert "Analiza pliku wykaza≥a brak" in response.json()["detail"]
+    assert "Analiza pliku wykaza≈Ça brak" in response.json()["detail"]
 
 def test_decoder_api_rejects_corrupted_file():
     response = client.post(
