@@ -1,5 +1,5 @@
 from fastapi import UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class XOREncryptRequest(BaseModel):
     """Schema dla danych wejściowych szyfrowania XOR."""
@@ -50,12 +50,13 @@ class XOREncryptResponse(BaseModel):
         description="Przetworzony tekst po operacji XOR"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "output": "Qwsd#$1"
             }
         }
+    )
 
 class XORDecryptResponse(BaseModel):
     """Schema dla danych wyjściowych XOR."""
@@ -65,9 +66,10 @@ class XORDecryptResponse(BaseModel):
         description="Przetworzony tekst po operacji XOR"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "output": "Wiadomość"
             }
         }
+    )
