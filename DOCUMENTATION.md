@@ -160,12 +160,12 @@ Repozytorium zawiera przykładowe nośniki: `test/image/*.bmp`, `test/audio/*.wa
 
 Dekodowanie jest **deterministyczne** - opiera się na odczytanym nagłówku. Dostępne są dwie ścieżki:
 
-**A. Ścieżka backendowa (`/decoder/process`)** - pojedynczy endpoint realizujący cały proces po stronie serwera ([`decoder_service.process_file`](backend/app/services/decoder_service.py)):
+**A. Ścieżka backendowa (`/decoder/process`)** - pojedynczy endpoint realizujący cały proces po stronie serwera (`decoder_service.process_file`):
 1. Odczyt nagłówka z pliku (szyfr, suwaki, liczba bitów, tryb).
 2. Ekstrakcja zaszyfrowanego ciągu bitów (LSB).
 3. Deszyfrowanie odpowiednim algorytmem z użyciem klucza podanego przez użytkownika.
 
-**B. Ścieżka frontendowa (`decodeEncodedFile`)** - frontend orkiestruje kolejne wywołania: odczyt nagłówka → przywrócenie nośnika → ekstrakcja LSB → deszyfrowanie. Zwraca też przywrócony, „czysty" plik nośnika.
+**B. Ścieżka frontendowa (`decodeEncodedFile`)** - frontend wykonuje kolejno wywołania: odczyt nagłówka → przywrócenie nośnika → ekstrakcja LSB → deszyfrowanie. Zwraca też przywrócony, „czysty" plik nośnika.
 
 > Uwaga: deszyfrowanie wymaga podania **tego samego klucza**, którym zaszyfrowano wiadomość (poza szyframi bezkluczowymi Atbash i ROT13). `decoder_service` zawiera dodatkowo pomocniczą funkcję `_derive_key_from_sliders`, wyprowadzającą klucz z wartości suwaków, gdy klucz nie jest dostarczony jawnie.
 
@@ -268,7 +268,7 @@ Gdy plik nie zawiera ukrytej wiadomości (lub nagłówek/hash jest nieprawidłow
 
 ## 6. Format nagłówka metadanych
 
-Nagłówek opisuje, **jak** plik został zakodowany, i jest wstrzykiwany do struktury pliku nośnika (dla BMP - tuż przed danymi pikseli, z odpowiednią korektą pól rozmiaru i offsetu w nagłówku BMP). Implementacja: [`headerBMP_service.py`](backend/app/services/headerBMP_service.py), [`headerWAV_service.py`](backend/app/services/headerWAV_service.py).
+Nagłówek opisuje, **jak** plik został zakodowany, i jest wstrzykiwany do struktury pliku nośnika (dla BMP - tuż przed danymi pikseli, z odpowiednią korektą pól rozmiaru i offsetu w nagłówku BMP). Implementacja: `headerBMP_service.py`, `headerWAV_service.py`.
 
 ### Układ bitowy (BMP)
 
@@ -290,22 +290,22 @@ Pierwsze 51 bitów (7 bajtów) niesie właściwe metadane; pozostałe 13 bitów 
 
 ### Nagłówek WAV
 
-Analogiczny, lecz z jednym suwakiem (`slider`) zamiast trójki RGB - patrz `WAVHeader` w [`header_schema.py`](backend/app/schemas/header_schema.py).
+Analogiczny, lecz z jednym suwakiem (`slider`) zamiast trójki RGB - patrz `WAVHeader` w `header_schema.py`.
 
 ---
 
 ## 7. Frontend
 
-Aplikacja React (Vite, React 19, Tailwind CSS 4). Punkt wejścia: [`src/App.jsx`](frontend/src/App.jsx) - dwie zakładki przełączane stanem `activeTab`:
+Aplikacja React (Vite, React 19, Tailwind CSS 4). Punkt wejścia: `src/App.jsx` - dwie zakładki przełączane stanem `activeTab`:
 
-- **Koder** - [`views/EncodeView.jsx`](frontend/src/views/EncodeView.jsx)
-- **Dekoder** - [`views/DecodeView.jsx`](frontend/src/views/DecodeView.jsx)
+- **Koder** - `views/EncodeView.jsx`
+- **Dekoder** - `views/DecodeView.jsx`
 
 ### Warstwy
 
 | Katalog | Rola |
 | :--- | :--- |
-| `src/api/` | Komunikacja z backendem ([`steganographyApi.js`](frontend/src/api/steganographyApi.js)) - szyfrowanie, hide/extract, nagłówki, dekodowanie, normalizacja parametrów. |
+| `src/api/` | Komunikacja z backendem (`steganographyApi.js`) - szyfrowanie, hide/extract, nagłówki, dekodowanie, normalizacja parametrów. |
 | `src/config/` | Konfiguracja: `appConfig.js` (URL API, typy mediów, tryby), `ciphers.js` (definicje szyfrów, wymagane klucze). |
 | `src/hooks/` | Logika wielokrotnego użytku: `useEncoder`, `useDecoder`, `useMediaFile`, `useWaveform`. |
 | `src/components/` | Komponenty UI, w tym `common/` (Button, Alert, FileDropzone, SliderControl, MediaPreview, WaveformCanvas/Modal) i podgląd nośnika. |
