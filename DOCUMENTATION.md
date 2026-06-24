@@ -339,10 +339,14 @@ PZ-2026/
 │   │   └── schemas/            # modele Pydantic (żądania/odpowiedzi)
 │   └── tests/                  # testy pytest
 ├── frontend/
+│   ├── cypress/                # środowisko testów automatycznych E2E
+│   │   ├── e2e/                # pliki scenariuszy testowych 
+│   │   └── fixtures/           # testowe pliki nośników 
+│   ├── cypress.config.js       # plik konfiguracyjny Cypress
 │   ├── package.json
 │   ├── vite.config.js
 │   └── src/
-│       ├── api/  config/  hooks/  components/  layout/  utils/  views/
+│       ├── api/  config/  hooks/  components/  layout/  views/ utils           
 │       ├── App.jsx  main.jsx  i18n.js
 │       └── ...
 ├── test/                       # przykładowe pliki BMP/WAV
@@ -371,3 +375,17 @@ python3 -m pytest
 ```
 
 > Pokrycie testami jest selektywne - kompletne testy istnieją dla modułów dekodera, nagłówka, steganografii oraz szyfru XOR.
+
+Testy frontendu (Cypress E2E)
+Aplikacja kliencka posiada zautomatyzowane testy End-to-End, symulujące zachowanie rzeczywistego użytkownika w przeglądarce. Scenariusze znajdują się w katalogu frontend/cypress/e2e/.
+Zakres testów E2E obejmuje:
+Weryfikację poprawności ładowania aplikacji (UI state).
+Walidację interfejsu (np. blokada procesu kodowania bez wgranego pliku).
+Pełny proces kodowania nośnika BMP (wgrywanie pliku testowego z katalogu fixtures/, zmiana parametrów, interakcja z suwakami kanałów RGB obsługiwanymi przez React Synthetic Events).
+Pełny proces kodowania nośnika WAV (zmiany w selektorach, dynamiczne renderowanie suwaka głębi LSB dla audio).
+Uruchomienie frontendu:
+Aby uruchomić testy, aplikacja kliencka (serwer Vite) musi działać w tle. Framework Cypress jest pobierany automatycznie przy instalacji zależności (yarn install).
+```bash
+cd frontend
+yarn run cypress open
+```
