@@ -1,9 +1,4 @@
-describe("Aplikacja Steganograficzna", () => {
-  it("powinna poprawnie załadować stronę główną", () => {
-    cy.visit("http://localhost:5173");
-    cy.get("body").should("exist");
-  });
-
+describe("Aplikacja Steganograficzna encode view", () => {
   it("powinna zablokować kodowanie bez wybranego pliku", () => {
     cy.visit("http://localhost:5173");
 
