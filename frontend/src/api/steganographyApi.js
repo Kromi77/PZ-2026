@@ -1,5 +1,6 @@
 import { API_BASE_URL, MEDIA_TYPES } from "../config/appConfig";
 import { CIPHER_TYPES } from "../config/ciphers";
+import { logger } from "../utils/logger";
 
 function describeFile(file) {
   if (!file) return null;
@@ -250,14 +251,18 @@ async function postJson(endpoint, body, fallbackMessage) {
 
 export async function encryptText(cipher, text, key) {
   const { endpoint, body } = buildEncryptionPayload(cipher, text, key);
+  logger.debug("Encrypting text", { cipher, textLength: text.length });
   const data = await postJson(endpoint, body, "Encryption failed");
+  logger.debug("Text encrypted successfully");
 
   return getResponseOutput(data, "Encryption response does not contain output");
 }
 
 export async function decryptText(cipher, text, key) {
   const { endpoint, body } = buildDecryptionPayload(cipher, text, key);
+  logger.debug("Decrypting text", { cipher, textLength: text.length });
   const data = await postJson(endpoint, body, "Decryption failed");
+  logger.debug("Text decrypted successfully");
 
   return getResponseOutput(data, "Decryption response does not contain output");
 }
@@ -273,6 +278,11 @@ export async function hideSteganography(
   const normalizedDeploymentMode = normalizeDeploymentMode(deploymentMode);
   const sliderPayload = getSliderPayload(normalizedMediaType, sliders);
   const endpoint = "/steganography/hide";
+  logger.debug("Hiding steganography", {
+    mediaType: normalizedMediaType,
+    deploymentMode: normalizedDeploymentMode,
+    sliders,
+  });
 
   const formData = new FormData();
   formData.append("file", file);
@@ -288,6 +298,7 @@ export async function hideSteganography(
 
   await ensureSuccessfulResponse(response, "Steganography hide failed");
   const blob = await response.blob();
+  logger.debug("Steganography hidden successfully", { blobSize: blob.size });
 
   return blob;
 }
@@ -308,6 +319,11 @@ export async function injectHeader(
     normalizedMediaType === "bmp"
       ? "/header/inject-bmp/"
       : "/header/inject-wav/";
+  logger.debug("Injecting header", {
+    cipher: backendCipher,
+    bits,
+    mediaType: normalizedMediaType,
+  });
 
   const formData = new FormData();
   formData.append("file", file);
@@ -323,6 +339,7 @@ export async function injectHeader(
 
   await ensureSuccessfulResponse(response, "Header injection failed");
   const blob = await response.blob();
+  logger.debug("Header injected successfully");
 
   return blob;
 }
@@ -333,6 +350,7 @@ export async function extractHeader(file, mediaType) {
     normalizedMediaType === "bmp"
       ? "/header/extract-bmp-header/"
       : "/header/extract-wav-header/";
+  logger.debug("Extracting header", { mediaType: normalizedMediaType });
 
   const formData = new FormData();
   formData.append("file", file);
@@ -344,6 +362,7 @@ export async function extractHeader(file, mediaType) {
 
   await ensureSuccessfulResponse(response, "Header extraction failed");
   const data = await response.json();
+  logger.debug("Header extracted successfully", data);
 
   return data;
 }
@@ -354,6 +373,7 @@ export async function restoreCarrierFile(file, mediaType) {
     normalizedMediaType === "bmp"
       ? "/header/extract-bmp/"
       : "/header/extract-wav/";
+  logger.debug("Restoring carrier file", { mediaType: normalizedMediaType });
 
   const formData = new FormData();
   formData.append("file", file);
@@ -365,6 +385,7 @@ export async function restoreCarrierFile(file, mediaType) {
 
   await ensureSuccessfulResponse(response, "Header restore failed");
   const blob = await response.blob();
+  logger.debug("Carrier file restored successfully", { blobSize: blob.size });
 
   return blob;
 }
@@ -380,6 +401,12 @@ export async function extractSteganography(
   const normalizedDeploymentMode = normalizeDeploymentMode(deploymentMode);
   const sliderPayload = getSliderPayload(normalizedMediaType, sliders);
   const endpoint = "/steganography/extract";
+  logger.debug("Extracting steganography", {
+    mediaType: normalizedMediaType,
+    deploymentMode: normalizedDeploymentMode,
+    sliders,
+    totalBits,
+  });
 
   const formData = new FormData();
   formData.append("file", file);
@@ -398,6 +425,9 @@ export async function extractSteganography(
 
   await ensureSuccessfulResponse(response, "Steganography extract failed");
   const data = await response.json();
+  logger.debug("Steganography extracted successfully", {
+    messageLength: data.message?.length,
+  });
 
   const message = data.message;
 
